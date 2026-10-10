@@ -15,6 +15,14 @@ import { registerBindings } from './integrations/discord/bindings.js';
 import { registerDiscordWorker } from './integrations/discord/jobs.js';
 import { registerControlIntegration } from './integrations/control/routes.js';
 import { startSourceSync } from './integrations/legacy-calendar/importer.js';
+import { purgeExpiredGroups } from './groups/trash.js';
+import { initializeLifecycle, registerLifecycle } from './groups/lifecycle.js';
+import { initializeWorkflow, registerWorkflow, cleanupEventTrash } from './events/workflow.js';
+import { initializeAccountSettings, registerAccountSettings } from './auth/account-settings.js';
+import {
+  initializeInvitationDelivery,
+  startInvitationDelivery,
+} from './notifications/invitation-delivery.js';
 
 const host = process.env.HOST || '127.0.0.1';
 const base = new URL(process.env.BASE_URL || 'http://127.0.0.1:3100');
@@ -27,6 +35,10 @@ if (
 if (!demo && base.protocol !== 'https:')
   throw new Error('Real OAuth mode requires HTTPS BASE_URL.');
 const app = express();
+initializeInvitationDelivery();
+initializeLifecycle();
+initializeWorkflow();
+initializeAccountSettings();
 app.disable('x-powered-by');
 app.set('trust proxy', 'loopback');
 app.use(
@@ -47,7 +59,10 @@ app.use(['/api', '/internal'], (req, res, next) => {
 });
 app.use(authenticate);
 registerAuth(app);
+registerAccountSettings(app);
 registerGroups(app);
+registerLifecycle(app);
+registerWorkflow(app);
 registerBindings(app);
 registerDiscordWorker(app);
 registerControlIntegration(app);
@@ -57,6 +72,7 @@ registerAdministration(app);
 registerNotifications(app);
 const stopReminders = startReminderScheduler();
 const stopSource = startSourceSync();
+const stopInvitationDelivery = startInvitationDelivery();
 app.get('/api/health', (req, res) => res.json({ ok: true, version: '0.1.0' }));
 app.get(['/g/:slug', '/invite/:token', '/connect/:token'], (req, res) =>
   res.sendFile(fileURLToPath(new URL('../public/index.html', import.meta.url))),
@@ -72,15 +88,18 @@ const server = app.listen(Number(process.env.PORT || 3100), host, () =>
   console.log(`Tutel Calendar: ${base.origin}`),
 );
 const cleanup = setInterval(() => {
+  purgeExpiredGroups();
+  cleanupEventTrash();
   db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now());
   db.prepare('DELETE FROM oauth_states WHERE expires_at<?').run(Date.now());
   db.prepare('DELETE FROM discord_connection_grants WHERE expires_at<?').run(Date.now());
 }, 600000);
 cleanup.unref();
-function shutdown() {
+async function shutdown() {
   stopSource();
   stopReminders();
   clearInterval(cleanup);
+  await stopInvitationDelivery();
   server.close(() => {
     db.close();
     process.exit(0);

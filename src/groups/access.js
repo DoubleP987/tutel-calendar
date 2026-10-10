@@ -14,6 +14,8 @@ export function groupContext(req, res, next) {
   if (typeof value !== 'string') return res.status(400).json({ error: 'กลุ่มไม่ถูกต้อง' });
   const group = groupFor(value);
   if (!group) return res.status(404).json({ error: 'ไม่พบกลุ่ม' });
+  if (db.prepare('SELECT group_id FROM group_trash WHERE group_id=?').get(group.id))
+    return res.status(410).json({ error: 'ปฏิทินนี้อยู่ในถังขยะ เจ้าของกู้คืนได้จากเมนูกลุ่ม' });
   const membership =
     req.session &&
     db

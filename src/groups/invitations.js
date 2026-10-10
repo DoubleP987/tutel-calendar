@@ -90,7 +90,12 @@ export function acceptInvitation(invitation, user) {
         `SELECT i.*,g.suspended FROM invitations i JOIN groups g ON g.id=i.group_id WHERE i.id=? AND i.revoked=0 AND i.expires_at>? AND i.uses<i.max_uses`,
       )
       .get(invitation.id, Date.now());
-    if (!live || live.suspended) throw new Error('คำเชิญหมดอายุ ถูกยกเลิก หรือใช้ครบแล้ว');
+    if (
+      !live ||
+      live.suspended ||
+      db.prepare('SELECT group_id FROM group_trash WHERE group_id=?').get(live.group_id)
+    )
+      throw new Error('คำเชิญหมดอายุ ถูกยกเลิก หรือใช้ครบแล้ว');
     if (
       live.email &&
       !db
@@ -112,6 +117,7 @@ export function acceptInvitation(invitation, user) {
       );
       db.prepare('UPDATE invitations SET uses=uses+1 WHERE id=?').run(live.id);
       recordAudit(db, user.id, 'invitation.accepted', live.id, live.group_id);
+      recordAudit(db, user.id, 'membership.joined', user.id, live.group_id);
     }
     db.exec('COMMIT');
     return live.group_id;
@@ -126,7 +132,8 @@ export function claimEmailInvitations(user) {
   const invitations = db
     .prepare(
       `SELECT DISTINCT i.* FROM invitations i JOIN identities a ON a.email=i.email
-    WHERE a.user_id=? AND a.email_verified=1 AND i.kind='email' AND i.revoked=0 AND i.expires_at>? AND i.uses<i.max_uses`,
+    WHERE a.user_id=? AND a.email_verified=1 AND i.kind='email' AND i.revoked=0 AND i.expires_at>? AND i.uses<i.max_uses
+    AND NOT EXISTS (SELECT 1 FROM membership_exits x WHERE x.group_id=i.group_id AND x.user_id=a.user_id)`,
     )
     .all(user.id, Date.now());
   for (const invitation of invitations) {
@@ -141,7 +148,10 @@ export function claimEmailInvitations(user) {
 export function invitationList(groupId) {
   return db
     .prepare(
-      `SELECT id,email,name,role,kind,expires_at,max_uses,uses,revoked,created_at FROM invitations WHERE group_id=? ORDER BY created_at DESC LIMIT 500`,
+      `SELECT i.id,i.email,i.name,i.role,i.kind,i.expires_at,i.max_uses,i.uses,i.revoked,i.created_at,
+      d.state AS delivery_state,d.reason AS delivery_reason
+      FROM invitations i LEFT JOIN invitation_delivery d ON d.invitation_id=i.id
+      WHERE i.group_id=? ORDER BY i.created_at DESC LIMIT 500`,
     )
     .all(groupId);
 }
@@ -183,7 +193,7 @@ export function parseMemberCsv(text) {
   return rows.map((fields, index) => {
     const value = Object.fromEntries(header.map((name, i) => [name, fields[i] || '']));
     const email = normalizeEmail(value.email),
-      role = value.role.trim() || 'member';
+      role = (value.role || '').trim() || 'member';
     const error = !emailPattern.test(email)
       ? 'อีเมลไม่ถูกต้อง'
       : seen.has(email)
@@ -192,7 +202,7 @@ export function parseMemberCsv(text) {
           ? 'CSV เพิ่มได้เฉพาะสมาชิกหรือผู้แก้ไข'
           : null;
     seen.add(email);
-    return { row: index + 2, email, name: value.name.trim().slice(0, 100), role, error };
+    return { row: index + 2, email, name: (value.name || '').trim().slice(0, 100), role, error };
   });
 }
 

@@ -6,13 +6,28 @@
     <meta name="theme-color" content="#f8faf9" />
     <title>Tutel Calendar · พื้นที่ของทุกกำหนดการ</title>
     <link rel="icon" href="/assets/tutel.png" />
-    <link rel="stylesheet" href="/styles.css?v=20261010-drawer" />
+    <link rel="stylesheet" href="/styles.css?v=20261010-history" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/assets/app-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Tutel📅" />
-    <script src="/app.js?v=20261010-drawer" type="module"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <script src="/boot.js?v=20261010-loading" defer></script>
+    <script src="/app.js?v=20261010-history" type="module"></script>
   </head>
   <body>
+    <div id="app-loading" class="app-loading" role="status" aria-live="polite">
+      <div class="loading-scene" aria-hidden="true">
+        <div class="loading-orbit"></div>
+        <div class="loading-logo"><img src="/assets/app-icon.png" alt="" /></div>
+        <span class="loading-spark spark-one"></span><span class="loading-spark spark-two"></span>
+        <span class="loading-spark spark-three"></span>
+      </div>
+      <strong class="loading-brand">Tutel<span>CALENDAR</span></strong>
+      <p id="loading-message">กำลังเตรียมปฏิทินของคุณ</p>
+      <div class="loading-track" aria-hidden="true"><span></span></div>
+      <button id="loading-retry" hidden type="button">ลองโหลดอีกครั้ง</button>
+    </div>
+    <noscript>ปฏิทินต้องใช้ JavaScript กรุณาเปิด JavaScript ในเบราว์เซอร์เพื่อใช้งาน</noscript>
     <div class="layout">
       <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="ปิดเมนู" hidden></button>
       <aside class="sidebar" id="sidebar" aria-label="เมนูปฏิทิน">
@@ -33,6 +48,9 @@
           </button>
           <button data-page="members" class="nav" id="members-nav" hidden>
             ♙ <span>สมาชิกและสิทธิ์</span>
+          </button>
+          <button data-page="history" class="nav" id="history-nav" hidden>
+            ◷ <span>ประวัติกลุ่ม</span>
           </button>
           <button data-page="admin" class="nav" id="admin-nav" hidden>
             ⚙ <span>ตั้งค่าปฏิทิน</span>
@@ -67,6 +85,12 @@
           >
         </div>
         <footer>
+          <button id="install-open" class="install-entry" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5" />
+            </svg>
+            เพิ่มลงหน้าจอโฮม
+          </button>
           by Double_P <span>v0.1.0</span> · <a href="/privacy.html">ความเป็นส่วนตัว</a>
         </footer>
       </aside>
@@ -172,6 +196,13 @@
             </div>
             <div id="members-list" class="cards"></div>
           </section>
+          <section id="history-page" hidden>
+            <div class="section-intro">
+              <h2>ประวัติของกลุ่มนี้</h2>
+              <span>สมาชิกทุกคนดูได้ · เวลา Asia/Bangkok · ประวัติเก่าอาจมีข้อมูลไม่ครบ</span>
+            </div>
+            <div id="history-list" class="settings-card"></div>
+          </section>
           <section id="admin-page" hidden>
             <form id="admin-form" class="settings-card">
               <h2>การอนุมัติกิจกรรม</h2>
@@ -268,6 +299,24 @@
           <button type="button" class="close" data-close="event-dialog" aria-label="ปิด">×</button>
         </div>
         <div class="form-content">
+          <details class="workspace-tools">
+            <summary>ฉบับร่างและกิจกรรมซ้ำ</summary>
+            <label
+              ><input type="checkbox" name="draft" /> บันทึกเป็นฉบับร่าง ยังไม่ส่งอนุมัติ</label
+            >
+            <label
+              >ทำซ้ำ<select name="repeatFrequency">
+                <option value="none">ไม่ทำซ้ำ</option>
+                <option value="daily">ทุกวัน</option>
+                <option value="weekly">ทุกสัปดาห์</option>
+                <option value="monthly">ทุกเดือน</option>
+              </select></label
+            >
+            <label>ทำซ้ำถึง<input type="date" name="repeatUntil" disabled /></label>
+            <p class="fine">
+              ทำซ้ำได้ภายในหนึ่งปี แก้ไขทั้งชุดผ่านรายการหลัก หรือยกเลิกเฉพาะครั้งจากปฏิทิน
+            </p>
+          </details>
           <label
             >ชื่อกิจกรรม<input
               name="title"

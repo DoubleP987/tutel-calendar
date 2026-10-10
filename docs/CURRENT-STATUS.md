@@ -1,49 +1,15 @@
-# Current status / สถานะปัจจุบัน
+# Current status — 10 October 2026
 
-Updated 10 October 2026. This is the operational reference when older learning examples differ.
+Calendar web runs on homeserver through its existing HTTPS tunnel. Public general dates are shared once; selected groups hold their own activities. Google/Discord OAuth, queued invitations and accepted email delivery have been configured. One explicitly authorized Gmail invitation was observed in the inbox; no mass CSV test was sent.
 
-## Repository and process boundaries
+Implemented: mobile sidebar/themes, initial loading screen and installation guide, public default without CS SKRU selection, calendar trash with 30-day recovery, leaving/removing members, seven-day accepted ownership transfer, CSV existing-member skip, multi-group display, event drafts/cancellation/trash/history, bounded virtual recurrence and occurrence exceptions, JSON export, daily web summaries and quiet hours, account linking/unlinking and session controls.
 
-| Repository                | Application                                                              | Runtime                                 |
-| ------------------------- | ------------------------------------------------------------------------ | --------------------------------------- |
-| DoubleP987/tutel-hub      | Music/radio and private server panel; legacy Calendar adapter            | Existing homeserver/Oracle bot services |
-| DoubleP987/tutel-calendar | Calendar website, OAuth, groups, invitations, general dates and job APIs | homeserver tutel-calendar.service       |
+See WORKFLOWS.md and WORKFLOWS.th.md for exact scope and API contracts. Calendar workflow changes were reviewed/formatted and the service startup is checked after deployment. No destructive calendar/member/ownership production test was performed. Physical-device installation/Push validation remains pending.
 
-The applications do not share environment files, SQLite files, sessions or OAuth secrets. The Discord application “Tutel Calendar” supplies web OAuth. A separate Discord calendar bot process has not been started; production reminders still use the original TutelBot.
+Grouped Discord worker is prepared but not enabled: CALENDAR_GROUPS_ENABLED=0 remains until legacy channel migration and coordinated bot-host cutover. Original Discord reminders are separate and are not automatically disabled by web group deletion. Calendar OAuth app is not a second bot runtime. Website hosting does not fail over to Oracle. Main server-panel APIs remain privileged and separate from group managers.
 
-## Deployed
+Music Loop default is off for guilds without a saved preference. Skip in a one-song loop restarts that song; a queued successor takes priority when skipping a song loop. Intentional decoder termination no longer marks playback failed. Nineteen relevant automated regressions passed; actual Discord audio was not exercised by synthetic tests. No GitHub push was performed for this update.
 
-- HTTPS calendar.toomtoom.online through outbound Cloudflare Tunnel; no inbound router port required.
-- Google/Discord login, verified identity-based linking, group memberships and invitations.
-- Compact group popup and collapsible left sidebar on mobile. It closes after selecting a page; categories, theme and account actions are inside it.
-- One-action email invitations using server SMTP. Link/code invitations are for copying. CSV adds pending invitations without bulk delivery.
-- General dates stored once: 542 shared occurrences and 6 group-specific at migration, 548 total retained. Counts are a snapshot, not a quota.
-- Indexed shared/group queries and reusable prepared statements. Creating groups copies no events.
-- Web reminders and Discord job generation use the same reader, with group-specific settings. Production Discord worker activation remains pending.
+## Group history and directory (10 October 2026)
 
-## Visibility and preferences
-
-Non-members of public groups see shared general dates only. Members see the selected group's activities plus shared dates. Private groups require membership. Shared dates do not depend on the original CS SKRU group's visibility.
-
-Signed-in category filters are saved per group in membership preferences; guests use browser storage. Defaults: education, community, important days and holidays. Islamic is an optional category; no unsupported dates are fabricated.
-
-**Pending:** simultaneous multi-group display and explicit Discord-link activity viewing requested separately. These are not implemented by the shared-date update.
-
-## Known limits
-
-- The legacy Discord scheduler/publisher and one-way snapshot import remain active. New native web activities do not yet reach that scheduler.
-- The private panel bridge exists in source, but production cutover is pending.
-- SMTP is configured; actual invitation email receipt has not been verified. Device Push/badging also remain unverified end-to-end.
-- Netlify redirect deployment is blocked by account credits. Vercel redirects preserve legacy API endpoints.
-- Website hosting does not fail over to Oracle. Bot election is separate.
-- Records missing from later source snapshots are preserved; deletion reconciliation needs an explicit policy.
-
-## Deployment locations and backups
-
-Application: `/home/doublep/tutel-calendar/app`. SQLite: `/home/doublep/tutel-calendar/data/calendar.sqlite`. Secrets remain in the server `.env` and private tunnel token file, outside Git.
-
-Consistent backups: `/home/doublep/tutel-calendar/backups/groups-20261010-101849` and `/home/doublep/tutel-calendar/backups/shared-calendar-20261010`.
-
-## ภาษาไทย
-
-สอง repo แยกรันและแยกข้อมูล เว็บจริงมี sidebar และวันทั่วไปชุดกลางแล้ว กิจกรรมเฉพาะกลุ่มไม่ปนกัน บัญชี Calendar ไม่มีสิทธิคุมเครื่อง การแยก repo ไม่ได้เริ่มบอท Discord ใหม่ ส่วนแสดงหลายกลุ่มพร้อมกัน ลิงก์ Discord แบบเฉพาะกลุ่ม และการเปิด worker แจ้งเตือนใหม่ยังเป็นงานค้าง การขึ้น Git ไม่ได้เปิดระบบเหล่านี้อัตโนมัติ
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.

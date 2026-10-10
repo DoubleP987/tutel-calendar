@@ -44,7 +44,14 @@ export function registerPreferences(app) {
         return res.status(400).json({ error: 'มุมมองไม่ถูกต้อง' });
       value.view = req.body.view;
     }
-    for (const key of ['notifyPublished', 'notifyReview', 'notifyReminders']) {
+    for (const key of [
+      'notifyPublished',
+      'notifyReview',
+      'notifyReminders',
+      'notifyChanges',
+      'notifyDaily',
+      'quietEnabled',
+    ]) {
       if (req.body[key] !== undefined) {
         if (typeof req.body[key] !== 'boolean')
           return res.status(400).json({ error: 'ค่าตั้งไม่ถูกต้อง' });
@@ -61,6 +68,14 @@ export function registerPreferences(app) {
         return res.status(400).json({ error: 'เวลาไม่ถูกต้อง' });
       value.dayTime = req.body.dayTime;
     }
+    for (const key of ['quietStart', 'quietEnd'])
+      if (req.body[key] !== undefined) {
+        if (typeof req.body[key] !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(req.body[key]))
+          return res.status(400).json({ error: 'ช่วงเวลาเงียบไม่ถูกต้อง' });
+        value[key] = req.body[key];
+      }
+    if (value.quietEnabled && (value.quietStart || '22:00') === (value.quietEnd || '07:00'))
+      return res.status(400).json({ error: 'เวลาเริ่มและสิ้นสุดงดรบกวนต้องต่างกัน' });
     db.prepare('UPDATE memberships SET preferences=? WHERE group_id=? AND user_id=?').run(
       JSON.stringify(value),
       req.group.id,

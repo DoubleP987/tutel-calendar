@@ -38,6 +38,17 @@ export function mergeVerifiedAccount(targetId, sourceId) {
         );
     }
     db.prepare('DELETE FROM memberships WHERE user_id=?').run(sourceId);
+    db.prepare(
+      'INSERT OR IGNORE INTO membership_exits SELECT group_id,?,exited_at FROM membership_exits WHERE user_id=?',
+    ).run(targetId, sourceId);
+    db.prepare('DELETE FROM membership_exits WHERE user_id=?').run(sourceId);
+    db.prepare('DELETE FROM account_views WHERE user_id=?').run(sourceId);
+    db.prepare('UPDATE ownership_requests SET from_user=? WHERE from_user=?').run(
+      targetId,
+      sourceId,
+    );
+    db.prepare('UPDATE ownership_requests SET to_user=? WHERE to_user=?').run(targetId, sourceId);
+    db.prepare('DELETE FROM ownership_requests WHERE from_user=to_user').run();
     db.prepare('UPDATE events SET owner_id=? WHERE owner_id=?').run(targetId, sourceId);
     db.prepare('UPDATE events SET reviewed_by=? WHERE reviewed_by=?').run(targetId, sourceId);
     db.prepare(

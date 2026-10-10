@@ -6,7 +6,7 @@ The multi-group Calendar web application and invitation routes are now deployed 
 
 Brevo SMTP is configured in the server-only `.env`. The verified sender is **Tutel Calendar <noreply@toomtoom.online>**, using STARTTLS on port 587. SMTP credentials are never included in documentation or Git. The key expires on 10 October 2027 and after 90 days of inactivity according to Brevo. Free account quota currently shows 300 emails per day.
 
-To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the exact verified account email, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. CSV currently creates preassigned invitations without bulk email.
+To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the exact verified account email, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. Confirmed CSV imports create preassigned invitations and queue email delivery in SQLite, processed one at a time. SMTP acceptance does not guarantee inbox placement. Failed sends are visible in invitation history and can be explicitly resent.
 
 The deployed service is active and the live page displays the invitation form. No invitation/delivery test email was sent during this deployment; receiving an actual email has not been verified. Discord worker cutover and the private bot control-panel group integration have not been activated by this web update. Existing bot reminder behavior continues.
 
@@ -54,7 +54,7 @@ student@parichat.skru.ac.th,Student,member
 editor@example.com,Editor,editor
 ```
 
-Preassignment needs no mail server. Actual invitation emails require SMTP_HOST, SMTP_PORT, SMTP_FROM and, when required by the provider, SMTP_USER/SMTP_PASSWORD. The sender uses TLS and Nodemailer; the web UI sends email invitations in one action, while link/code invitations are created for copying. CSV imports create preassignments without bulk mail. A configured SMTP service, mail delivery and spam reputation are external prerequisites; Brevo SMTP has now been provisioned on homeserver; see the production invitation update above.
+Preassignment needs no mail server. Actual invitation emails require SMTP_HOST, SMTP_PORT, SMTP_FROM and, when required by the provider, SMTP_USER/SMTP_PASSWORD. The sender uses TLS and Nodemailer; the web UI sends email invitations in one action, while link/code invitations are created for copying. Confirmed CSV imports create preassignments and queue emails. Existing active invitations may be resent while preserving their original role; resending rotates the link. A configured SMTP service, mail delivery and spam reputation are external prerequisites; Brevo SMTP has now been provisioned on homeserver; see the production invitation update above.
 
 ## 4. Accounts and OAuth
 
@@ -151,3 +151,15 @@ Non-members, including signed-out guests, can read only imported general holiday
 Every group reads the same holidays and observances. Each occurrence is stored once in events with data_scope=shared. User-created events and imported custom activities keep data_scope=group and remain isolated. Creating a group does not copy any calendar rows.
 
 The API combines shared and authorized group records with UNION ALL. The scopes are disjoint, so a general event appears once, including in the original group. Partial indexes support shared-date and group-date reads. Shared updates apply to all groups on their next fetch; category filters still follow user preferences. Web reminders and the Discord job scheduler use the same combined reader with group-specific settings. Private-group authorization remains required.
+
+## Calendar trash (10 October 2026)
+
+Owner-only deletion, exact-name confirmation and 30-day recovery are implemented. See [Group deletion](GROUP-DELETION.md) for authorization, APIs, cleanup, backups and legacy notification boundaries.
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## Group history and directory (10 October 2026)
+
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.

@@ -36,37 +36,42 @@ export function startSourceSync() {
       if (!Array.isArray(snapshot.events) || snapshot.events.length > 10000)
         throw new Error('Invalid snapshot');
       const now = new Date().toISOString();
-      const rows = snapshot.events.map((e) => {
-        const occurrence = e.occurrence_at || e.starts_at;
-        const start = local(occurrence);
-        const finish = e.occurrence_end || e.ends_at;
-        // All-day source end timestamps are exclusive.
-        const end = finish
-          ? local(e.all_day ? new Date(new Date(finish).valueOf() - 1).toISOString() : finish)
-          : start;
-        const id = 'source:' + createHash('sha256').update(`${e.id}@${occurrence}`).digest('hex');
-        const tags = Array.isArray(e.categories)
-          ? e.categories.filter((x) => typeof x === 'string')
-          : [];
-        return [
-          id,
-          String(e.title || '').slice(0, 160),
-          String(e.description || '').slice(0, 2000),
-          start.date,
-          end.date < start.date ? start.date : end.date,
-          e.all_day ? '' : start.time,
-          e.all_day ? '' : end.time,
-          e.all_day ? 1 : 0,
-          /^#[a-f\d]{6}$/i.test(e.color || '') ? e.color : '#4285f4',
-          e.publicHoliday ? 'holiday' : e.systemHoliday ? 'important' : 'community',
-          now,
-          now,
-          JSON.stringify(tags),
-          String(e.id),
-          occurrence,
-          e.publicHoliday || e.systemHoliday ? 'shared' : 'group',
-        ];
-      });
+      const legacyTrashed = db
+        .prepare("SELECT group_id FROM group_trash WHERE group_id='legacy-calendar'")
+        .get();
+      const rows = snapshot.events
+        .filter((e) => !legacyTrashed || e.publicHoliday || e.systemHoliday)
+        .map((e) => {
+          const occurrence = e.occurrence_at || e.starts_at;
+          const start = local(occurrence);
+          const finish = e.occurrence_end || e.ends_at;
+          // All-day source end timestamps are exclusive.
+          const end = finish
+            ? local(e.all_day ? new Date(new Date(finish).valueOf() - 1).toISOString() : finish)
+            : start;
+          const id = 'source:' + createHash('sha256').update(`${e.id}@${occurrence}`).digest('hex');
+          const tags = Array.isArray(e.categories)
+            ? e.categories.filter((x) => typeof x === 'string')
+            : [];
+          return [
+            id,
+            String(e.title || '').slice(0, 160),
+            String(e.description || '').slice(0, 2000),
+            start.date,
+            end.date < start.date ? start.date : end.date,
+            e.all_day ? '' : start.time,
+            e.all_day ? '' : end.time,
+            e.all_day ? 1 : 0,
+            /^#[a-f\d]{6}$/i.test(e.color || '') ? e.color : '#4285f4',
+            e.publicHoliday ? 'holiday' : e.systemHoliday ? 'important' : 'community',
+            now,
+            now,
+            JSON.stringify(tags),
+            String(e.id),
+            occurrence,
+            e.publicHoliday || e.systemHoliday ? 'shared' : 'group',
+          ];
+        });
       const insert = db.prepare(`INSERT INTO events
         (id,title,description,date,end_date,time,end_time,all_day,color,category,status,created_at,updated_at,source_categories,source_id,source_occurrence,data_scope)
         VALUES (?,?,?,?,?,?,?,?,?,?,'published',?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET

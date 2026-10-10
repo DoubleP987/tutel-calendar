@@ -1,3 +1,5 @@
+import { renderGroupHistory, groupDate } from './history.js?v=20261010-history';
+
 export function settingsUI({ api, state, element, toast, detail }) {
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
@@ -5,7 +7,34 @@ export function settingsUI({ api, state, element, toast, detail }) {
     prefs,
     catalog,
     generation = 0;
-  const pages = ['members', 'admin', 'notifications', 'preferences'];
+  const pages = ['members', 'history', 'admin', 'notifications', 'preferences'];
+  const preferenceForm = $('#preferences-form');
+  const extraSettings = element('details', 'workspace-tools');
+  extraSettings.append(element('summary', '', 'สรุปรายวันและช่วงเวลางดรบกวน'));
+  for (const [name, text] of [
+    ['notifyChanges', 'แจ้งเมื่อกิจกรรมเปลี่ยนหรือถูกยกเลิก'],
+    ['notifyDaily', 'สรุปกิจกรรมวันนี้หนึ่งครั้ง ตามเวลาเตือนทั้งวัน'],
+    ['quietEnabled', 'งดส่งแจ้งเตือนเข้าอุปกรณ์ในช่วงนี้ (ยังเก็บในเว็บ)'],
+  ]) {
+    const row = element('label'),
+      input = element('input');
+    input.type = 'checkbox';
+    input.name = name;
+    row.append(input, document.createTextNode(' ' + text));
+    extraSettings.append(row);
+  }
+  for (const [name, text] of [
+    ['quietStart', 'เริ่มงดรบกวน'],
+    ['quietEnd', 'สิ้นสุดงดรบกวน'],
+  ]) {
+    const row = element('label', '', text),
+      input = element('input');
+    input.type = 'time';
+    input.name = name;
+    row.append(input);
+    extraSettings.append(row);
+  }
+  preferenceForm.insertBefore(extraSettings, preferenceForm.querySelector('[type=submit]'));
   function categoryOptions(root, selected) {
     root.replaceChildren();
     for (const category of catalog.categories) {
@@ -37,14 +66,21 @@ export function settingsUI({ api, state, element, toast, detail }) {
     generation++;
     catalog = value;
     prefs = preferences;
-    for (const id of ['members-nav', 'admin-nav'])
-      document.getElementById(id).hidden = state.session.user?.role !== 'manager';
+    $('#admin-nav').hidden = state.session.user?.role !== 'manager';
+    for (const id of ['members-nav', 'history-nav'])
+      document.getElementById(id).hidden = !state.session.user || !state.group?.role;
     await badge();
   }
   async function open(name) {
     if (!pages.includes(name)) return false;
+    if (name === 'history') {
+      await renderGroupHistory({ api, state, element, root: $('#history-list') });
+      return true;
+    }
     if (name === 'members') {
+      const groupId = state.groupId;
       const members = await api('/api/members');
+      if (state.groupId !== groupId) return true;
       const root = $('#members-list');
       root.replaceChildren();
       for (const user of members) {
@@ -66,7 +102,12 @@ export function settingsUI({ api, state, element, toast, detail }) {
           ),
         );
         card.append(top);
-        card.append(element('p', 'fine', `บัญชี ${user.provider} · ID ${user.id}`));
+        card.append(element('p', 'fine', `บัญชี ${user.provider}`));
+        card.append(element('p', 'fine', `เข้าร่วม ${groupDate(user.joined_at)} · เวลาไทย`));
+        if (!['owner', 'manager'].includes(state.group.role) && !state.session.user.platformAdmin) {
+          root.append(card);
+          continue;
+        }
         const controls = element('div', 'member-controls'),
           role = element('select');
         for (const [value, title] of [
@@ -99,6 +140,13 @@ export function settingsUI({ api, state, element, toast, detail }) {
           role.disabled = blocked.disabled = true;
         }
         button.onclick = async () => {
+          if (
+            (role.value !== user.role || blocked.checked !== !!user.blocked) &&
+            !confirm(
+              `เปลี่ยนสิทธิ์ของ ${user.name}? สมาชิกเพิ่มกิจกรรมของตัวเอง ผู้แก้ไขจัดการกิจกรรม ผู้จัดการดูแลสมาชิกและอนุมัติ แต่ไม่เป็นเจ้าของ`,
+            )
+          )
+            return;
           button.disabled = true;
           try {
             await api('/api/members/' + user.id, {
@@ -117,6 +165,31 @@ export function settingsUI({ api, state, element, toast, detail }) {
           }
         };
         controls.append(role, trustLabel, blockedLabel, button);
+        if (
+          user.role !== 'owner' &&
+          user.id !== state.session.user.id &&
+          (state.group.role === 'owner' || user.role !== 'manager')
+        ) {
+          const remove = element('button', 'danger', 'นำออกจากกลุ่ม');
+          remove.onclick = async () => {
+            if (
+              !confirm(
+                `นำ ${user.name} ออกจากกลุ่ม? กิจกรรมเดิมยังอยู่ หากต้องการห้ามกลับเข้ากลุ่มให้ใช้ระงับแทน`,
+              )
+            )
+              return;
+            remove.disabled = true;
+            try {
+              await api('/api/members/' + user.id, { method: 'DELETE' });
+              await open('members');
+              toast('นำสมาชิกออกแล้ว');
+            } catch (error) {
+              toast(error.message);
+              remove.disabled = false;
+            }
+          };
+          controls.append(remove);
+        }
         card.append(controls);
         root.append(card);
       }
@@ -131,6 +204,10 @@ export function settingsUI({ api, state, element, toast, detail }) {
       const form = $('#preferences-form');
       for (const key of ['notifyPublished', 'notifyReview', 'notifyReminders'])
         form.elements[key].checked = prefs[key];
+      for (const key of ['notifyChanges', 'notifyDaily', 'quietEnabled'])
+        form.elements[key].checked = key === 'notifyChanges' ? prefs[key] !== false : !!prefs[key];
+      form.elements.quietStart.value = prefs.quietStart || '22:00';
+      form.elements.quietEnd.value = prefs.quietEnd || '07:00';
       form.elements.leadMinutes.value = prefs.leadMinutes;
       form.elements.dayTime.value = prefs.dayTime;
       categoryOptions($('#notify-categories'), prefs.notifyCategories);
@@ -196,6 +273,11 @@ export function settingsUI({ api, state, element, toast, detail }) {
           notifyPublished: form.elements.notifyPublished.checked,
           notifyReview: form.elements.notifyReview.checked,
           notifyReminders: form.elements.notifyReminders.checked,
+          notifyChanges: form.elements.notifyChanges.checked,
+          notifyDaily: form.elements.notifyDaily.checked,
+          quietEnabled: form.elements.quietEnabled.checked,
+          quietStart: form.elements.quietStart.value,
+          quietEnd: form.elements.quietEnd.value,
           leadMinutes: Number(form.elements.leadMinutes.value),
           dayTime: form.elements.dayTime.value,
           notifyCategories: $$('#notify-categories input:checked').map((i) => i.value),

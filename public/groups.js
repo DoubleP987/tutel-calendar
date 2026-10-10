@@ -1,7 +1,9 @@
+import { workspaceUI } from './workspace.js?v=20261010-workflows';
+import { renderGroupHistory } from './history.js?v=20261010-history';
 const labels = { owner: 'เจ้าของ', manager: 'ผู้จัดการ', editor: 'ผู้แก้ไข', member: 'สมาชิก' };
 
 /** Group navigation and invitation workflows share the calendar's scoped API helper. */
-export function groupsUI({ api, state, element, toast, reload }) {
+export function groupsUI({ api, state, element, toast, reload, editEvent }) {
   const $ = (selector) => document.querySelector(selector);
   const dialog = element('dialog');
   dialog.id = 'groups-dialog';
@@ -108,6 +110,8 @@ export function groupsUI({ api, state, element, toast, reload }) {
     );
   }
 
+  const workspace = workspaceUI({ api, state, element, toast, reload, open, button, editEvent });
+
   async function create() {
     if (!state.session.user) {
       $('#login-dialog').showModal();
@@ -178,12 +182,15 @@ export function groupsUI({ api, state, element, toast, reload }) {
       });
       body.replaceChildren();
       const sent = invitation.delivery.status === 'sent';
-      const failed = kind === 'email' && !sent;
+      const queued = invitation.delivery.status === 'queued';
+      const failed = kind === 'email' && !sent && !queued;
       const title =
         kind === 'email'
-          ? sent
-            ? 'ส่งคำเชิญแล้ว'
-            : 'สร้างคำเชิญแล้ว แต่ส่งอีเมลไม่สำเร็จ'
+          ? queued
+            ? 'กำลังส่งคำเชิญทางอีเมล'
+            : sent
+              ? 'ส่งคำเชิญแล้ว'
+              : 'สร้างคำเชิญแล้ว แต่ส่งอีเมลไม่สำเร็จ'
           : kind === 'code'
             ? 'รหัสเข้าร่วมพร้อมแล้ว'
             : 'ลิงก์เชิญพร้อมแล้ว';
@@ -193,9 +200,11 @@ export function groupsUI({ api, state, element, toast, reload }) {
           element(
             'p',
             'fine',
-            sent
-              ? `ส่งลิงก์เข้าร่วมไปที่ ${invitation.email} แล้ว ผู้รับเข้าสู่ระบบด้วยอีเมลนี้เพื่อเข้ากลุ่ม`
-              : 'ยังไม่ได้ส่งถึงผู้รับ คุณสามารถคัดลอกลิงก์ด้านล่างไปให้ผู้รับโดยตรงได้',
+            queued
+              ? `เพิ่ม ${invitation.email} เข้าคิวส่งแล้ว ดูผลได้ในคำเชิญทั้งหมด หากไม่พบเมลให้ตรวจจดหมายขยะด้วย`
+              : sent
+                ? `ส่งลิงก์เข้าร่วมไปที่ ${invitation.email} แล้ว ผู้รับเข้าสู่ระบบด้วยอีเมลนี้เพื่อเข้ากลุ่ม`
+                : 'ยังไม่ได้ส่งถึงผู้รับ คุณสามารถคัดลอกลิงก์ด้านล่างไปให้ผู้รับโดยตรงได้',
           ),
         );
       else
@@ -208,7 +217,7 @@ export function groupsUI({ api, state, element, toast, reload }) {
               : 'คัดลอกลิงก์นี้ส่งให้คนที่ต้องการเชิญ ผู้รับต้องเข้าสู่ระบบก่อนเข้าร่วม',
           ),
         );
-      if (!sent) showSecret(body, kind === 'code' ? invitation.token : invitation.url);
+      if (!sent && !queued) showSecret(body, kind === 'code' ? invitation.token : invitation.url);
       const actions = element('div', 'invite-footer');
       actions.append(
         button('เชิญคนอื่น', invites),
@@ -278,7 +287,7 @@ export function groupsUI({ api, state, element, toast, reload }) {
   async function listInvites() {
     const body = open('คำเชิญของกลุ่ม'),
       items = await api('/api/invitations');
-    body.append(button('＋ เชิญสมาชิก', invites));
+    body.append(button('＋ เชิญสมาชิก', invites), button('รีเฟรชสถานะการส่ง', listInvites));
     for (const invite of items) {
       const card = element('article', 'proposal');
       const expired = invite.expires_at <= Date.now();
@@ -305,6 +314,34 @@ export function groupsUI({ api, state, element, toast, reload }) {
           `หมดอายุ ${new Date(invite.expires_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`,
         ),
       );
+      if (invite.kind === 'email') {
+        const deliveryLabels = {
+          queued: 'รอส่ง',
+          sending: 'กำลังส่ง',
+          sent: 'ผู้ให้บริการรับอีเมลแล้ว (ยังไม่ยืนยันว่าเข้ากล่องขาเข้า)',
+          failed: 'ส่งไม่สำเร็จ',
+          uncertain: 'ไม่ทราบผลการส่ง',
+          cancelled: 'ยกเลิกการส่ง',
+          'not-configured': 'ยังไม่ได้ตั้งค่า SMTP',
+          'invalid-configuration': 'ตั้งค่า SMTP ไม่ถูกต้อง',
+        };
+        card.append(
+          element(
+            'p',
+            'fine',
+            `อีเมล: ${deliveryLabels[invite.delivery_state] || 'ยังไม่มีประวัติการส่ง'}${invite.delivery_reason ? ' · ' + invite.delivery_reason : ''}`,
+          ),
+        );
+        if (!ended && !['queued', 'sending'].includes(invite.delivery_state))
+          card.append(
+            button('ส่งอีเมลอีกครั้ง', async () => {
+              if (!window.confirm('ส่งคำเชิญอีกครั้ง? ลิงก์ในอีเมลเดิมจะใช้ไม่ได้')) return;
+              await api(`/api/invitations/${invite.id}/resend`, { method: 'POST' });
+              toast('เข้าคิวส่งอีเมลแล้ว');
+              await listInvites();
+            }),
+          );
+      }
       if (!ended)
         card.append(
           button('ยกเลิกคำเชิญ', async () => {
@@ -322,7 +359,7 @@ export function groupsUI({ api, state, element, toast, reload }) {
       element(
         'p',
         'fine',
-        'เพิ่มสิทธิ์ไว้ให้รายชื่อนี้ เมื่อเข้าสู่ระบบด้วยอีเมลตรงกันจะเข้ากลุ่มได้ โดยไม่ส่งเมลจำนวนมาก · หัวตาราง email,name,role · role เป็น member หรือ editor · สูงสุด 500 คน',
+        'สร้างคำเชิญและส่งอีเมลให้แต่ละคนตามคิว เมื่อเข้าสู่ระบบด้วยอีเมลตรงกันจะเข้ากลุ่มได้ · หัวตาราง email,name,role · role เป็น member หรือ editor · สูงสุด 500 คน · การส่งขึ้นกับโควตาผู้ให้บริการ',
       ),
     );
     const file = element('input');
@@ -342,12 +379,19 @@ export function groupsUI({ api, state, element, toast, reload }) {
         });
         csvRows = result.rows;
         preview.replaceChildren();
+        preview.append(
+          element(
+            'p',
+            'notice',
+            `ทั้งหมด ${csvRows.length} · ส่ง ${csvRows.filter((r) => !r.error && !r.skip).length} · ข้ามสมาชิกเดิม ${csvRows.filter((r) => r.skip).length} · ต้องแก้ ${csvRows.filter((r) => r.error).length}`,
+          ),
+        );
         for (const row of csvRows)
           preview.append(
             element(
               'p',
               row.error ? 'error' : 'fine',
-              `${row.row}: ${row.email} · ${labels[row.role] || row.role}${row.error ? ' · ' + row.error : ''}`,
+              `${row.row}: ${row.email} · ${labels[row.role] || row.role}${row.error ? ' · ' + row.error : row.info ? ' · ' + row.info : ''}`,
             ),
           );
         confirm.disabled = !csvRows.length || csvRows.some((r) => r.error);
@@ -356,14 +400,26 @@ export function groupsUI({ api, state, element, toast, reload }) {
       }
     };
     confirm = button(
-      'ยืนยันสร้างคำเชิญ',
+      'ยืนยันและส่งอีเมลคำเชิญ',
       async () => {
-        const result = await api('/api/invitations/csv', {
-          method: 'POST',
-          body: JSON.stringify({ csv: selectedCsv, confirm: true }),
-        });
-        toast(`สร้างคำเชิญ ${result.invitations.length} รายการแล้ว · จะจับคู่เมื่อผู้รับ login`);
-        dialog.close();
+        if (
+          csvRows.some((row) => row.existing) &&
+          !window.confirm(
+            'มีคำเชิญเดิมอยู่ ต้องการส่งอีกครั้งหรือไม่? จะคงสิทธิ์เดิม แต่ลิงก์ในอีเมลเดิมจะใช้ไม่ได้',
+          )
+        )
+          return;
+        confirm.disabled = true;
+        try {
+          const result = await api('/api/invitations/csv', {
+            method: 'POST',
+            body: JSON.stringify({ csv: selectedCsv, confirm: true }),
+          });
+          toast(`สร้างคำเชิญ ${result.invitations.length} รายการแล้ว · เข้าคิวส่งอีเมล`);
+          await listInvites();
+        } finally {
+          confirm.disabled = false;
+        }
       },
       'primary',
     );
@@ -400,17 +456,118 @@ export function groupsUI({ api, state, element, toast, reload }) {
       body.append(button('โอนเจ้าของกลุ่ม', transfer));
     }
     body.append(
+      button('กิจกรรมทั้งหมด', () => workspace.events()),
+      button('ถังขยะกิจกรรม', () => workspace.events(true)),
+      button('ส่งออกกิจกรรม', workspace.exportData),
       button('เชิญสมาชิก', invites),
       button('ช่องแจ้งเตือน Discord', bindings),
       button('เชื่อมบัญชี Google/Discord', accounts),
       button('ดูประวัติการจัดการ', audit),
     );
+    if (state.group.role === 'owner') {
+      const danger = element('section', 'group-danger-zone');
+      danger.append(
+        element('h3', '', 'ลบปฏิทิน'),
+        element(
+          'p',
+          'fine',
+          'ย้ายเข้าถังขยะ 30 วัน เจ้าของกู้คืนได้ ระหว่างนั้นสมาชิกจะเข้าไม่ได้และระบบกลุ่มจะหยุดแจ้งเตือน',
+        ),
+      );
+      danger.append(button('ลบปฏิทินนี้', deleteGroup, 'danger'));
+      body.append(danger);
+    }
+  }
+  async function deleteGroup() {
+    const group = { ...state.group };
+    const body = open('ย้ายปฏิทินเข้าถังขยะ');
+    body.append(
+      element(
+        'p',
+        '',
+        `ปฏิทิน “${group.name}” จะอยู่ในถังขยะ 30 วัน จากนั้นกิจกรรม สมาชิก และการตั้งค่าของกลุ่มนี้จะถูกลบถาวร วันทั่วไปและบัญชีผู้ใช้จะยังอยู่`,
+      ),
+    );
+    body.append(
+      element(
+        'p',
+        'fine',
+        'คำเชิญเดิมจะถูกยกเลิก แม้กู้คืนแล้วก็ต้องเชิญใหม่ ข้อความหรืออีเมลที่ส่งไปแล้วไม่สามารถเรียกคืนได้',
+      ),
+    );
+    const node = form(body, async (f) => {
+      await api('/api/group', {
+        method: 'DELETE',
+        body: JSON.stringify({ name: f.elements.name.value }),
+        groupId: group.id,
+      });
+      dialog.close();
+      state.groupId = '';
+      history.replaceState(null, '', '/');
+      await reload();
+      toast('ย้ายปฏิทินเข้าถังขยะแล้ว กู้คืนได้ภายใน 30 วัน');
+    });
+    const name = field(node, `พิมพ์ชื่อปฏิทินให้ตรง: ${group.name}`, 'name');
+    name.required = true;
+    name.autocomplete = 'off';
+    submit(node, 'ยืนยันย้ายเข้าถังขยะ');
+    const confirmButton = node.querySelector('[type=submit]');
+    confirmButton.classList.add('danger');
+    confirmButton.disabled = true;
+    name.oninput = () => {
+      confirmButton.disabled = name.value !== group.name;
+    };
+  }
+  async function trash() {
+    const body = open('ถังขยะปฏิทิน');
+    body.append(
+      element(
+        'p',
+        'fine',
+        'เฉพาะเจ้าของที่เห็นและกู้คืนได้ภายใน 30 วัน กิจกรรมและสมาชิกจะกลับมา แต่คำเชิญเดิมไม่กลับมาใช้งาน',
+      ),
+    );
+    const items = await api('/api/groups/trash');
+    if (!items.length) body.append(element('p', 'empty', 'ไม่มีปฏิทินในถังขยะ'));
+    for (const group of items) {
+      const card = element('article', 'proposal');
+      card.append(
+        element('h3', '', group.name),
+        element(
+          'p',
+          'fine',
+          `กู้คืนได้ถึง ${new Date(group.purge_after).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`,
+        ),
+      );
+      const restore = button(
+        'กู้คืนปฏิทิน',
+        async () => {
+          restore.disabled = true;
+          try {
+            const result = await api(`/api/groups/${encodeURIComponent(group.id)}/restore`, {
+              method: 'POST',
+              body: '{}',
+            });
+            dialog.close();
+            state.groupId = result.id;
+            history.replaceState(null, '', `/g/${result.slug}`);
+            await reload();
+            toast('กู้คืนปฏิทินแล้ว');
+          } finally {
+            restore.disabled = false;
+          }
+        },
+        'primary',
+      );
+      card.append(restore);
+      body.append(card);
+    }
   }
   async function transfer() {
     const body = open('โอนเจ้าของกลุ่ม'),
       members = await api('/api/members'),
       node = form(body, async (f) => {
-        if (!confirm('โอนเจ้าของกลุ่มให้สมาชิกที่เลือก?')) return;
+        if (!confirm('ส่งคำขอโอนเจ้าของ? สิทธิ์จะเปลี่ยนเมื่อผู้รับยอมรับภายใน 7 วัน')) return;
         await api('/api/group/transfer', {
           method: 'POST',
           body: JSON.stringify({ userId: f.elements.userId.value }),
@@ -427,23 +584,56 @@ export function groupsUI({ api, state, element, toast, reload }) {
         .map((m) => [m.id, m.name]),
       '',
     );
-    submit(node, 'โอนเจ้าของ');
-  }
-  async function audit() {
-    const body = open('ประวัติกลุ่ม');
-    for (const item of await api('/api/group/audit'))
+    submit(node, 'ส่งคำขอโอนเจ้าของ');
+    const pending = await api('/api/group/transfer');
+    if (pending) {
       body.append(
         element(
           'p',
-          'fine',
-          `${new Date(item.created_at).toLocaleString('th-TH')} · ${item.actor} · ${item.action}`,
+          'notice',
+          `รอ ${pending.name} ยอมรับ · หมดอายุ ${new Date(pending.expires_at).toLocaleString('th-TH')}`,
         ),
+        button('ยกเลิกคำขอ', async () => {
+          await api('/api/group/transfer', { method: 'DELETE' });
+          await transfer();
+        }),
       );
+    }
+  }
+  async function audit() {
+    const body = open('ประวัติกลุ่ม');
+    await renderGroupHistory({ api, state, element, root: body });
   }
   async function accounts() {
     const body = open('เชื่อมบัญชี');
     body.append(
       element('p', 'fine', 'ยืนยันบัญชีทั้งสองก่อนเชื่อม ระบบไม่รวมบัญชีจากอีเมลตรงกันอัตโนมัติ'),
+    );
+    const linked = await api('/api/accounts');
+    for (const account of linked) {
+      const card = element('article', 'proposal');
+      card.append(
+        element('h3', '', account.provider),
+        element('p', 'fine', account.email || 'ไม่เปิดเผยอีเมล'),
+      );
+      if (linked.length > 1)
+        card.append(
+          button('ยกเลิกการเชื่อม', async () => {
+            if (
+              !confirm(
+                `ยกเลิก ${account.provider}? จะออกจากระบบเครื่องอื่น และต้องใช้บัญชีที่เหลือเข้าสู่ระบบ`,
+              )
+            )
+              return;
+            await api(`/api/accounts/${account.provider}`, { method: 'DELETE' });
+            await accounts();
+          }),
+        );
+      body.append(card);
+    }
+    body.append(
+      button('อุปกรณ์ที่เข้าสู่ระบบ', workspace.sessions),
+      button('คำขอโอนเจ้าของ', workspace.ownership),
     );
     for (const provider of ['google', 'discord'])
       body.append(
@@ -555,7 +745,15 @@ export function groupsUI({ api, state, element, toast, reload }) {
     const groups = [...(state.groups || [])];
     if (state.group && !groups.some((group) => group.id === state.group.id))
       groups.push(state.group);
-    body.append(element('p', 'group-menu-caption', 'เลือกปฏิทินที่ต้องการดู'), list);
+    const search = element('input');
+    search.type = 'search';
+    search.placeholder = 'ค้นหากลุ่มของฉัน';
+    search.setAttribute('aria-label', 'ค้นหากลุ่มของฉัน');
+    body.append(element('p', 'group-menu-caption', 'เลือกปฏิทินที่ต้องการดู'), search, list);
+    search.oninput = () => {
+      for (const item of list.children)
+        item.hidden = !item.textContent.toLowerCase().includes(search.value.toLowerCase());
+    };
     for (const group of groups) {
       const selected = group.id === state.groupId;
       const choice = button(
@@ -593,10 +791,23 @@ export function groupsUI({ api, state, element, toast, reload }) {
       button('＋ สร้างกลุ่ม', create),
       button('↗ เข้าร่วมด้วยคำเชิญ', () => join()),
     );
-    if (state.session.user) actions.append(button('เชื่อมบัญชี Google / Discord', accounts));
     if (['owner', 'manager'].includes(state.group?.role))
-      actions.append(button('⚙ จัดการกลุ่มนี้', settings), button('เชิญสมาชิก', invites));
+      actions.append(button('⚙ จัดการกลุ่มนี้', settings));
     body.append(actions);
+    if (state.session.user) {
+      const options = element('details', 'workspace-tools');
+      options.append(element('summary', '', 'ตัวเลือกและบัญชี'));
+      const secondary = element('div', 'workspace-actions');
+      secondary.append(button('บัญชีของฉัน', accounts), button('ถังขยะปฏิทิน', trash));
+      if (state.group?.role)
+        secondary.append(
+          button('ปฏิทินที่แสดงร่วมกัน', workspace.views),
+          button('ถังขยะกิจกรรม', () => workspace.events(true)),
+          button('ออกจากกลุ่ม', workspace.leave),
+        );
+      options.append(secondary);
+      body.append(options);
+    }
   }
 
   async function refreshed() {
@@ -605,18 +816,22 @@ export function groupsUI({ api, state, element, toast, reload }) {
     const trigger = button('', chooseGroup, 'group-menu-trigger');
     trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.setAttribute('aria-controls', 'groups-dialog');
-    trigger.setAttribute('aria-label', `เลือกกลุ่มปฏิทิน · ${state.group?.name || 'เลือกกลุ่ม'}`);
-    const name = element('span', 'group-trigger-name', state.group?.name || 'เลือกกลุ่ม');
+    trigger.setAttribute(
+      'aria-label',
+      `เลือกกลุ่มปฏิทิน · ${state.group?.name || 'ยังไม่มีปฏิทิน'}`,
+    );
+    const name = element('span', 'group-trigger-name', state.group?.name || 'ยังไม่มีปฏิทิน');
     name.id = 'group-name';
     trigger.append(element('span', 'group-trigger-icon', '▦'), name, chevron());
     root.append(trigger);
-    $('#group-access').textContent =
-      state.group?.canRead === false
+    $('#group-access').textContent = state.group?.trashed
+      ? 'ปฏิทินอยู่ในถังขยะ เจ้าของกู้คืนได้จากเมนูกลุ่ม → ถังขยะปฏิทิน'
+      : state.group?.canRead === false
         ? 'ต้องได้รับคำเชิญเพื่อเข้าถึงกลุ่มนี้'
         : state.group?.visibility === 'private'
           ? 'ปฏิทินเฉพาะสมาชิกกลุ่ม'
           : '';
     $('#group-access').hidden = !$('#group-access').textContent;
   }
-  return { refreshed, join, connect, invites };
+  return { refreshed, join, connect, invites, eventTools: workspace.eventTools };
 }

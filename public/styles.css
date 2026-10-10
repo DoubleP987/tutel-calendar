@@ -10,6 +10,261 @@
   --hover: #f1f5f2;
   --shadow: 0 18px 70px #173b2020;
 }
+.group-danger-zone {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.group-danger-zone h3 {
+  margin-top: 0;
+}
+button.danger {
+  color: #b3261e;
+  border-color: #b3261e;
+  background: var(--surface);
+}
+:root[data-theme='dark'] button.danger {
+  color: #ffb4ab;
+  border-color: #ffb4ab;
+}
+button.danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 35%, var(--soft), var(--bg) 65%);
+}
+.app-loading[hidden] {
+  display: none;
+}
+.loading-scene {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  display: grid;
+  place-items: center;
+}
+.loading-logo {
+  width: 112px;
+  height: 112px;
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+  animation: turtle-float 2.8s ease-in-out infinite;
+}
+.loading-logo img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.loading-orbit {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+.loading-orbit::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: calendar-orbit 3s linear infinite;
+}
+.loading-spark {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: calendar-spark 2.4s ease-in-out infinite;
+}
+.spark-one {
+  left: 15px;
+  top: 36px;
+  transform: rotate(20deg);
+}
+.spark-two {
+  right: 5px;
+  top: 100px;
+  animation-delay: 0.5s;
+}
+.spark-three {
+  left: 45px;
+  bottom: 3px;
+  animation-delay: 1s;
+}
+.loading-brand {
+  font-size: clamp(28px, 6vw, 40px);
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+.loading-brand span {
+  display: block;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 5px;
+  margin: 12px 0 0 5px;
+}
+.app-loading p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.loading-track {
+  width: 136px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.loading-track span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  animation: calendar-progress 1.4s ease-in-out infinite;
+}
+.loading-failed .loading-track {
+  display: none;
+}
+@keyframes turtle-float {
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+}
+@keyframes calendar-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes calendar-spark {
+  50% {
+    opacity: 0.35;
+    scale: 0.6;
+  }
+}
+@keyframes calendar-progress {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loading *,
+  .loading-orbit::after {
+    animation: none !important;
+  }
+}
+.install-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+  text-align: left;
+  color: var(--accent);
+  background: var(--soft);
+}
+.install-entry[hidden] {
+  display: none;
+}
+.sidebar footer {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.install-entry {
+  flex-basis: 100%;
+  font-size: 14px;
+  min-height: 44px;
+}
+.install-entry svg,
+.install-share-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.install-share-icon {
+  vertical-align: middle;
+  color: var(--accent);
+}
+#install-dialog {
+  width: min(460px, calc(100% - 24px));
+  padding: 22px;
+  max-height: 90dvh;
+}
+.install-content {
+  display: grid;
+  gap: 14px;
+}
+.install-content h3,
+.install-content p {
+  margin: 0;
+}
+.install-content > p {
+  color: var(--muted);
+}
+.install-app-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  margin-top: 6px;
+}
+.install-platform {
+  color: var(--accent);
+  font-weight: 700;
+}
+#install-instructions {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--soft);
+}
+#install-instructions ol {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+#install-instructions li + li {
+  margin-top: 10px;
+}
+.install-guide-link {
+  color: var(--accent);
+  text-underline-offset: 4px;
+}
+.install-manual {
+  width: min(760px, calc(100% - 32px));
+  margin: 32px auto;
+  padding-bottom: 40px;
+}
+.install-manual section {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  margin: 20px 0;
+}
+.install-manual li + li {
+  margin-top: 10px;
+}
 :root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #121614;
@@ -1364,4 +1619,67 @@ dialog > form[method='dialog'] {
   .sidebar {
     transition: none;
   }
+}
+/* Secondary group workflows remain compact and wrap on small screens. */
+.workspace-tools {
+  margin-block: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+.workspace-tools summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.workspace-tools[open] summary {
+  margin-bottom: 12px;
+}
+.workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workspace-checks {
+  display: grid;
+  gap: 12px;
+  margin-block: 16px;
+}
+.workspace-checks label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace-checks input[type='checkbox'] {
+  width: auto;
+}
+.form-content > input[type='search'] {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.history-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.history-item {
+  border-inline-start: 2px solid var(--accent, #42a878);
+  padding: 0.2rem 1rem 1rem;
+  margin-block: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.history-heading {
+  margin: 0 0 0.35rem;
+  line-height: 1.7;
+}
+.history-target {
+  margin: 0 0 0.45rem;
+  line-height: 1.6;
+}
+.history-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: 1.5rem;
 }

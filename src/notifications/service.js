@@ -46,6 +46,21 @@ export function notify(userId, { title, body, eventId = null, groupId = null, ki
       groupId,
     );
   if (!result.changes || !configured) return;
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
+  const prefs = preferences(user, groupId);
+  const clock = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date());
+  const start = prefs.quietStart || '22:00',
+    end = prefs.quietEnd || '07:00';
+  if (
+    prefs.quietEnabled &&
+    (start < end ? clock >= start && clock < end : clock >= start || clock < end)
+  )
+    return;
   const rows = db.prepare('SELECT * FROM push_subscriptions WHERE user_id=?').all(userId);
   const payload = JSON.stringify({
     title,
@@ -66,6 +81,7 @@ export function notify(userId, { title, body, eventId = null, groupId = null, ki
 }
 export function published(eventId) {
   const event = db.prepare('SELECT * FROM events WHERE id=?').get(eventId);
+  if (!event || event.lifecycle !== 'active' || event.status !== 'published') return;
   for (const user of db
     .prepare(
       'SELECT u.* FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.group_id=? AND m.blocked=0 AND u.blocked=0',

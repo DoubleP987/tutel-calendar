@@ -36,6 +36,30 @@ export function startReminderScheduler() {
       const upcoming = new Map();
       for (const date of [today, tomorrow])
         for (const event of publishedEvents(group.id, { date })) upcoming.set(event.id, event);
+      const clock = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date(now));
+      for (const { user, prefs } of members) {
+        if (!prefs.notifyDaily || clock !== prefs.dayTime) continue;
+        const daily = [...upcoming.values()].filter(
+          (e) =>
+            e.date <= today && e.end_date >= today && prefs.notifyCategories.includes(e.category),
+        );
+        if (daily.length)
+          notify(user.id, {
+            title: 'กิจกรรมวันนี้',
+            body: daily
+              .map((e) => `${e.all_day ? 'ทั้งวัน' : e.time} ${e.title}`)
+              .join(' · ')
+              .slice(0, 1800),
+            groupId: group.id,
+            kind: 'daily',
+            dedupe: `daily:${today}`,
+          });
+      }
       for (const event of upcoming.values()) {
         for (const { user, prefs } of members) {
           if (!prefs.notifyReminders || !prefs.notifyCategories.includes(event.category)) continue;
@@ -56,7 +80,7 @@ export function startReminderScheduler() {
               notify(user.id, {
                 title: offset === 'start' || offset === 'day' ? 'กิจกรรมวันนี้' : 'กิจกรรมใกล้ถึง',
                 body: event.title,
-                eventId: event.id,
+                eventId: event.series_id || event.id,
                 groupId: group.id,
                 kind: 'reminder',
                 dedupe: `reminder:${event.id}:${offset}:${at}`,

@@ -90,3 +90,11 @@ Read dependencies from package.json. Keep database access out of browser code. K
 ## Shared dataset and repository ownership
 
 Calendar is published separately as DoubleP987/tutel-calendar; music/private panel remains in DoubleP987/tutel-hub. Dependencies, environments, databases and processes remain independent. src/events/published.js combines shared general dates with authorized group activities using indexed queries. Display, Web reminders and Discord jobs share this reader. Mobile sidebar lives in public/index.html, styles.css and app.js. No dates are cloned when creating a group. See SHARED-CALENDAR.md and CURRENT-STATUS.md.
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## Group history and directory (10 October 2026)
+
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.

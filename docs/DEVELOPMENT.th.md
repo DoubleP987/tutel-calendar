@@ -155,7 +155,7 @@ Jobs มี pending → claimed → sending → sent หรือ failed/uncerta
 
 Binding มี group/channel/categories/daily time/previous-day/timed Web reminders ใช้ preferences ต่อ member และ dedupe ต่อกลุ่ม Query วันนี้/พรุ่งนี้ แทนทั้งหมด เวลา Asia/Bangkok All-day source end เป็น exclusive ต้องแปลง inclusive สำหรับ display
 
-เมลล้มเหลวต้องเก็บคำเชิญและไม่รายงานว่าส่งแล้ว Email ส่งในขั้นเดียว Link/code ไม่ส่งเมล CSV ไม่ bulk-email อย่าส่งทดสอบให้คนอื่นโดยไม่มี authorization
+เมลล้มเหลวต้องเก็บคำเชิญและไม่รายงานว่าส่งแล้ว Email ส่งในขั้นเดียว Link/code ไม่ส่งเมล CSV ที่ยืนยันแล้วจะเข้าคิวส่งอีเมลทีละคน ดูสถานะและกดส่งซ้ำได้ในคำเชิญทั้งหมด อย่าส่งทดสอบให้คนอื่นโดยไม่มี authorization
 
 ยังเป็น one-way import กิจกรรม native ยังไม่ถึง scheduler Discord เดิม ต้องย้าย bindings ปิด scheduler เก่าและเปิด worker พร้อมกันตามแผน อย่าทำ sync ย้อนกลับวนกัน
 
@@ -205,3 +205,19 @@ Rollback app แยกจาก DB Additive schema ควรให้ release �
 **ส่งต่อ dev:** repo/revision Node/service/tunnel owner ช่องรับ secrets นอก Git OAuth callback/audience bootstrap admin backup/restore source/deletion policy SMTP sender/key lifetime Push key lifecycle role/binding/cutover และสิ่งที่ตรวจจริง
 
 **งานค้าง:** หลายกลุ่มพร้อมกัน Discord-link viewing worker/panel cutover Calendar Discord client แยกรัน native recurrence multi-host Web reminders automated tests mail/Push verification และ website failover ทั้งหมดนี้ยังไม่ใช่ฟีเจอร์เสร็จ อ่าน CURRENT-STATUS.md กับคู่มือ bot ก่อนแก้ contract ร่วม
+
+## Mobile installation (10 October 2026)
+
+`public/install.js` owns once-per-browser onboarding, iOS/iPad detection, standalone suppression and retained beforeinstallprompt handling. Native Android prompt runs only after a user click. `tutel-calendar-install-intro-v1` stores display acknowledgement, not account data. Sidebar entry reopens instructions. `public/install.html` and `install-guide.js` provide a bilingual themed guide. Do not imply iOS supports programmatic installation or that Android prompt availability is guaranteed. No new tracking or install API endpoint is used.
+
+## Calendar trash (10 October 2026)
+
+Owner-only deletion, exact-name confirmation and 30-day recovery are implemented. See [Group deletion](GROUP-DELETION.md) for authorization, APIs, cleanup, backups and legacy notification boundaries.
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
+
+สมาชิกทุก role อ่านรายชื่อ สิทธิ์ และเวลาที่เข้าร่วมกลุ่มเดียวกันได้ พร้อมหน้าประวัติแบ่งหน้า แสดงว่าใครทำอะไรกับรายการไหน เวลาไทย ปุ่มจัดการยังจำกัด role บันทึกใหม่เก็บชื่อสำรองหลังลบรายการ ไม่สร้างประวัติเก่าย้อนหลัง ไม่แสดงอีเมลหรือ token คำเชิญ ดู [คู่มือประวัติกลุ่ม](GROUP-HISTORY.th.md) สำหรับ API โครงสร้างและข้อจำกัด ต้องเริ่มเซิร์ฟเวอร์ใหม่เมื่อ deploy โค้ดรุ่นนี้

@@ -16,6 +16,14 @@ import { categories } from '../../events/categories.js';
 /** Private service API, authenticated with its own key. Never shares browser cookies. */
 export function registerControlIntegration(app) {
   app.use('/internal/v1/control', serviceAuth('control'));
+  app.use('/internal/v1/control/groups/:id', (req, res, next) => {
+    if (
+      !['GET', 'HEAD'].includes(req.method) &&
+      db.prepare('SELECT group_id FROM group_trash WHERE group_id=?').get(req.params.id)
+    )
+      return res.status(409).json({ error: 'ปฏิทินอยู่ในถังขยะ ให้เจ้าของกู้คืนก่อนแก้ไข' });
+    next();
+  });
   app.get('/internal/v1/control/catalog', (req, res) => res.json(categories));
   app.get('/internal/v1/control/overview', (req, res) =>
     res.json({
@@ -32,6 +40,8 @@ export function registerControlIntegration(app) {
       db
         .prepare(
           `SELECT g.*,
+    (SELECT deleted_at FROM group_trash t WHERE t.group_id=g.id) deleted_at,
+    (SELECT purge_after FROM group_trash t WHERE t.group_id=g.id) purge_after,
     (SELECT count(*) FROM memberships m WHERE m.group_id=g.id AND m.blocked=0) member_count,
     (SELECT count(*) FROM events e WHERE e.group_id=g.id) event_count,
     (SELECT u.name FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.group_id=g.id AND m.role='owner' LIMIT 1) owner
@@ -62,7 +72,14 @@ export function registerControlIntegration(app) {
     const group = db.prepare('SELECT * FROM groups WHERE id=?').get(req.params.id);
     if (!group) return res.sendStatus(404);
     res.json({
-      group: { ...group, settings: JSON.parse(group.settings) },
+      group: {
+        ...group,
+        trash:
+          db
+            .prepare('SELECT deleted_at,purge_after FROM group_trash WHERE group_id=?')
+            .get(group.id) || null,
+        settings: JSON.parse(group.settings),
+      },
       members: db
         .prepare(
           'SELECT u.id,u.name,u.provider,m.* FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.group_id=? ORDER BY u.name',

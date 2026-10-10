@@ -155,7 +155,7 @@ Delivery job lifecycle: pending → claimed → sending → sent (or failed/unce
 
 Binding configuration includes group/channel, categories, daily time, previous-day delivery and optional timed reminders. Web reminders have member-specific preferences and their own dedupe. The scheduler queries today/tomorrow rather than loading all historical events. Imported dates use Asia/Bangkok; source all-day ends are exclusive and converted to inclusive display dates.
 
-SMTP failure must not destroy an invitation or pretend mail was sent. Email mode sends in one action; link/code modes do not also send mail. CSV preassignment does not bulk-send. No invitation test email should be sent without authorization from the owner.
+SMTP failure must not destroy an invitation or pretend mail was sent. Email mode sends in one action; link/code modes do not also send mail. Confirmed CSV imports queue invitation emails per recipient. Existing active invitations can be resent with their original role; links are rotated only after confirmation. No invitation test email should be sent without authorization from the owner.
 
 Current integration is still one-way legacy snapshot import. Native web activities do not reach the original Discord scheduler. Bot worker/panel activation needs coordinated migration, compatible bindings and disabling the old scheduler; do not create a two-way synchronization loop.
 
@@ -205,3 +205,19 @@ Rollback the application independently from the database. An additive schema sho
 **Handover checklist:** repo/revision, Node version, service/tunnel ownership, secret access outside Git, OAuth callback/audience, bootstrap admin subjects, SQLite backup/restore plan, legacy importer source and deletion policy, SMTP sender/key lifetime, Push key lifecycle, group roles/bindings and pending worker activation. Keep a record of which behaviors were actually exercised.
 
 **Known pending work:** multi-group display; explicit Discord-link activity visibility; production Discord worker/private-panel cutover; separately running Calendar Discord bot; native recurrence; multi-host Web reminder coordination; automated tests; verified email/Push delivery; website failover. These are engineering tasks, not completed features. See CURRENT-STATUS.md and the bot's development guide before changing shared contracts.
+
+## Mobile installation (10 October 2026)
+
+`public/install.js` owns once-per-browser onboarding, iOS/iPad detection, standalone suppression and retained beforeinstallprompt handling. Native Android prompt runs only after a user click. `tutel-calendar-install-intro-v1` stores display acknowledgement, not account data. Sidebar entry reopens instructions. `public/install.html` and `install-guide.js` provide a bilingual themed guide. Do not imply iOS supports programmatic installation or that Android prompt availability is guaranteed. No new tracking or install API endpoint is used.
+
+## Calendar trash (10 October 2026)
+
+Owner-only deletion, exact-name confirmation and 30-day recovery are implemented. See [Group deletion](GROUP-DELETION.md) for authorization, APIs, cleanup, backups and legacy notification boundaries.
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## Group history and directory (10 October 2026)
+
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.

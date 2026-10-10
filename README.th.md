@@ -51,3 +51,11 @@ Git ไม่รวม .env ฐานข้อมูล session keys private bac
 ## PDF manuals / คู่มือ PDF
 
 [English guide](docs/manuals/Tutel-Calendar-Guide-EN.pdf) · [คู่มือภาษาไทย](docs/manuals/Tutel-Calendar-Guide-TH.pdf)
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
+
+สมาชิกทุก role อ่านรายชื่อ สิทธิ์ และเวลาที่เข้าร่วมกลุ่มเดียวกันได้ พร้อมหน้าประวัติแบ่งหน้า แสดงว่าใครทำอะไรกับรายการไหน เวลาไทย ปุ่มจัดการยังจำกัด role บันทึกใหม่เก็บชื่อสำรองหลังลบรายการ ไม่สร้างประวัติเก่าย้อนหลัง ไม่แสดงอีเมลหรือ token คำเชิญ ดู [คู่มือประวัติกลุ่ม](docs/GROUP-HISTORY.th.md) สำหรับ API โครงสร้างและข้อจำกัด ต้องเริ่มเซิร์ฟเวอร์ใหม่เมื่อ deploy โค้ดรุ่นนี้

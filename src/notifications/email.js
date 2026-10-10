@@ -22,15 +22,22 @@ export async function sendInvitationEmail(invitation, groupName) {
       timeStyle: 'short',
       timeZone: 'Asia/Bangkok',
     }).format(new Date(invitation.expiresAt));
-    await transport.sendMail({
+    const result = await transport.sendMail({
       from: process.env.SMTP_FROM,
       to: invitation.email,
       subject: `คำเชิญเข้ากลุ่ม ${groupName} · Tutel Calendar`,
-      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nเข้าสู่ระบบด้วย Google หรือ Discord ที่ยืนยันอีเมลตรงกับคำเชิญ\nคำเชิญหมดอายุ ${expires} (เวลาไทย)\nหากไม่ได้คาดว่าจะได้รับคำเชิญ สามารถละเว้นอีเมลนี้ได้`,
+      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nเข้าสู่ระบบด้วย Google หรือ Discord ที่ยืนยันอีเมลตรงกับคำเชิญ\nคำเชิญหมดอายุ ${expires} (เวลาไทย)\nหากคุณไม่รู้จักกลุ่มนี้หรือไม่ต้องการเข้าร่วม สามารถละเว้นอีเมลนี้ได้`,
     });
+    if (!result.accepted?.length) return { status: 'failed', reason: 'recipient-rejected' };
     return { status: 'sent' };
-  } catch {
-    return { status: 'failed' };
+  } catch (error) {
+    const reason = error.responseCode
+      ? `smtp-${error.responseCode}`
+      : ['EAUTH', 'ECONNECTION', 'ETIMEDOUT', 'ESOCKET', 'EENVELOPE'].includes(error.code)
+        ? error.code
+        : 'smtp-error';
+    console.warn('[invitation-email]', reason);
+    return { status: 'failed', reason };
   } finally {
     transport.close();
   }

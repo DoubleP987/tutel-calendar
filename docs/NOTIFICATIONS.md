@@ -53,3 +53,8 @@ Endpoints ของ push จำกัดไปยังผู้ให้บร�
 ## Shared dates and group reminders
 
 Web reminders use publishedEvents for shared dates plus group activities, querying today/tomorrow with each group's member preferences. Inbox and dedupe remain group-scoped. Discord jobs use the same reader, but production worker activation remains pending. Display categories and reminder categories are separate. See CURRENT-STATUS.md.
+
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.

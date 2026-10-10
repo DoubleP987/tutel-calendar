@@ -6,12 +6,13 @@ import { validateMemberChange } from '../groups/invitations.js';
 import { recordAudit } from '../groups/schema.js';
 
 export function registerAdministration(app) {
-  const guards = [member, groupContext, requireGroupMember, manageGroup];
-  app.get('/api/members', ...guards, (req, res) =>
+  const readers = [member, groupContext, requireGroupMember];
+  const guards = [...readers, manageGroup];
+  app.get('/api/members', ...readers, (req, res) =>
     res.json(
       db
         .prepare(
-          `SELECT u.id,u.name,u.provider,m.role,m.auto_approve,m.blocked FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.group_id=? ORDER BY u.name`,
+          `SELECT u.id,u.name,u.provider,m.role,m.auto_approve,m.blocked,m.joined_at FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.group_id=? ORDER BY u.name`,
         )
         .all(req.group.id),
     ),
@@ -65,11 +66,24 @@ export function registerAdministration(app) {
       res.json(value);
     },
   );
-  app.get('/api/group/audit', ...guards, (req, res) =>
-    res.json(
-      db
-        .prepare('SELECT * FROM audit_log WHERE group_id=? ORDER BY created_at DESC LIMIT 200')
-        .all(req.group.id),
-    ),
-  );
+  app.get('/api/group/audit', ...readers, (req, res) => {
+    const page = Number(req.query.page || 1);
+    if (!Number.isSafeInteger(page) || page < 1 || page > 100000)
+      return res.status(400).json({ error: 'หน้าประวัติไม่ถูกต้อง' });
+    const items = db
+      .prepare(
+        `
+      SELECT a.id,a.action,a.created_at,
+        COALESCE(s.actor_name,u.name,CASE WHEN a.actor='system' THEN 'ระบบ' ELSE 'ผู้ใช้เดิม / ผู้ดูแลระบบ' END) AS actor_name,
+        COALESCE(s.target_name,e.title,t.name,'') AS target_name
+      FROM audit_log a LEFT JOIN audit_snapshots s ON s.audit_id=a.id
+      LEFT JOIN users u ON u.id=a.actor
+      LEFT JOIN events e ON e.id=a.target AND e.group_id=a.group_id AND (a.action LIKE '%event.%' OR a.action LIKE '%event-%')
+      LEFT JOIN users t ON t.id=a.target AND (a.action LIKE '%membership%' OR a.action LIKE '%transfer%')
+      WHERE a.group_id=? ORDER BY a.created_at DESC,a.id DESC LIMIT 51 OFFSET ?
+    `,
+      )
+      .all(req.group.id, (page - 1) * 50);
+    res.json({ items: items.slice(0, 50), page, hasMore: items.length > 50 });
+  });
 }

@@ -87,3 +87,11 @@ npm run format and npm run format:check use Prettier. Formatting is not behavior
 ## PDF manuals / คู่มือ PDF
 
 [English guide](docs/manuals/Tutel-Calendar-Guide-EN.pdf) · [คู่มือภาษาไทย](docs/manuals/Tutel-Calendar-Guide-TH.pdf)
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## Group history and directory (10 October 2026)
+
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](docs/GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.

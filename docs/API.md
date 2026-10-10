@@ -52,7 +52,7 @@ Typical status codes: 401 not authenticated, 403 unauthorized/CSRF, 400 validati
 | GET /api/catalog               | Public         | Category labels and defaults                   |
 | GET /api/preferences           | Member         | Persisted display/reminder preferences         |
 | PUT /api/preferences           | Member + CSRF  | Save own preferences                           |
-| GET /api/members               | Manager        | All members, roles, trust and suspension       |
+| GET /api/members               | Group member   | Same-group members, roles and joined_at        |
 | PUT /api/members/:id           | Manager + CSRF | Set role, autoApprove, blocked                 |
 | GET /api/admin-settings        | Manager        | Calendar-wide approval/notification settings   |
 | PUT /api/admin-settings        | Manager + CSRF | Approval manual/trusted/all and manager alerts |
@@ -70,3 +70,11 @@ Approval policy may now publish a new proposal automatically. The POST events re
 Use x-calendar-group (ID/slug), query group or the saved last group. groupContext validates existence, suspension and membership. A selector is not permission. GET /api/events returns shared published dates plus selected-group published activities for members. Non-member public-group reads return shared dates only; private groups reject non-members. Rows carry data_scope and stable IDs. Shared storage group_id does not describe the viewing group. This is not a multi-group aggregation API.
 
 GET /api/groups lists memberships; POST /api/groups creates a private group; GET /api/group reads context; POST /api/group/select saves selection. POST /api/invitations sends automatically for kind=email; the web route needs no sendEmail checkbox. Link/code results are for copying. See GROUPS.md for account linking, CSV, bindings and internal jobs.
+
+## Workflow update — 10 October 2026
+
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+
+## Member-readable history
+
+`GET /api/group/audit?page=1` now requires group membership, rather than management privilege, and returns `{ items, page, hasMore }` instead of the old bare array. Page size is 50. Public item fields are `id`, `action`, `created_at`, `actor_name`, `target_name`; raw actor/target identifiers are omitted. All callers must use `result.items`. `GET /api/members` adds `joined_at`; writes still require management and CSRF. Both routes reject nonmembers even for public calendars. See [GROUP-HISTORY.md](GROUP-HISTORY.md).

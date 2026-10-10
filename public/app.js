@@ -1,5 +1,6 @@
-import { groupsUI } from './groups.js?v=20261010-invites';
-import { settingsUI } from './settings.js?v=20261010-groups';
+import { groupsUI } from './groups.js?v=20261010-history';
+import { settingsUI } from './settings.js?v=20261010-history';
+import { setupInstallation } from './install.js?v=20261010-install';
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 // Reuse the same controls and event handlers in desktop and mobile layouts.
@@ -55,6 +56,7 @@ document.addEventListener('keydown', (event) => {
 });
 mobileNavigation.addEventListener('change', updateNavigationLayout);
 updateNavigationLayout();
+setupInstallation({ closeSidebar, toast });
 const state = {
   date: new Date(),
   selected: key(new Date()),
@@ -109,7 +111,7 @@ async function api(path, options = {}) {
   return body;
 }
 const extended = settingsUI({ api, state, element, toast, detail });
-const groupUI = groupsUI({ api, state, element, toast, reload });
+const groupUI = groupsUI({ api, state, element, toast, reload, editEvent });
 let saveTimer,
   preferenceEpoch = 0;
 function guestPreferences(groupId = state.groupId) {
@@ -196,11 +198,17 @@ function detail(event) {
   );
   if (event.owner_name) root.append(element('p', 'fine', `เสนอโดย ${event.owner_name}`));
   if (event.sample) root.append(element('p', 'notice', 'ข้อมูลตัวอย่างสำหรับต้นแบบ'));
-  if (!event.source_id && ['owner', 'manager', 'editor'].includes(state.group?.role)) {
-    const edit = element('button', 'primary', 'แก้กิจกรรม');
+  if (
+    event.group_id === state.groupId &&
+    !event.source_id &&
+    ['owner', 'manager', 'editor'].includes(state.group?.role)
+  ) {
+    const edit = element('button', 'primary', event.series_id ? 'แก้ไขทั้งชุด' : 'แก้กิจกรรม');
     edit.onclick = () => editEvent(event);
     root.append(edit);
   }
+  if (event.group_name) root.append(element('p', 'fine', `ปฏิทิน: ${event.group_name}`));
+  groupUI.eventTools(root, event);
   $('#detail-dialog').showModal();
 }
 function agendaItem(event) {
@@ -213,7 +221,14 @@ function agendaItem(event) {
   item.style.borderBottom = '0';
   item.append(element('span', 'agenda-time', event.all_day ? 'ทั้งวัน' : event.time));
   const info = element('span');
-  info.append(element('strong', '', event.title), element('small', '', categories[event.category]));
+  info.append(
+    element('strong', '', event.title),
+    element(
+      'small',
+      '',
+      [categories[event.category], event.group_name].filter(Boolean).join(' · '),
+    ),
+  );
   item.append(info);
   item.onclick = () => detail(event);
   return item;
@@ -295,7 +310,7 @@ function render() {
       );
       pill.classList.toggle('continues-before', event.date < date);
       pill.classList.toggle('continues-after', event.end_date > date);
-      pill.title = event.title;
+      pill.title = [event.title, event.group_name].filter(Boolean).join(' · ');
       pill.onclick = (e) => {
         e.stopPropagation();
         detail(event);
@@ -317,7 +332,12 @@ function create(date = state.selected) {
   }
   const form = $('#event-form');
   form.reset();
+  form.elements.draft.disabled = false;
+  form.elements.repeatUntil.value = date;
+  form.elements.repeatUntil.disabled = true;
   delete form.dataset.editingId;
+  delete form.dataset.occurrence;
+  form.elements.repeatFrequency.disabled = false;
   form.elements.date.value = date;
   form.elements.endDate.value = date;
   $('#time-fields').hidden = true;
@@ -328,6 +348,9 @@ $$('[data-action=create]').forEach((b) => (b.onclick = () => create()));
 $$('[data-close]').forEach(
   (b) => (b.onclick = () => document.getElementById(b.dataset.close).close()),
 );
+$('#event-form').elements.repeatFrequency.onchange = (e) => {
+  $('#event-form').elements.repeatUntil.disabled = e.target.value === 'none';
+};
 $('#event-form').elements.allDay.onchange = (e) => ($('#time-fields').hidden = e.target.checked);
 $('#event-form').elements.date.onchange = (e) => {
   if ($('#event-form').elements.endDate.value < e.target.value)
@@ -340,11 +363,26 @@ $('#event-form').onsubmit = async (e) => {
   try {
     const payload = Object.fromEntries(new FormData(e.target));
     payload.allDay = e.target.elements.allDay.checked;
+    payload.draft = e.target.elements.draft.checked;
+    payload.recurrence = {
+      frequency: e.target.elements.repeatFrequency.value,
+      until: e.target.elements.repeatUntil.value,
+    };
     const editingId = e.target.dataset.editingId;
-    const result = await api(editingId ? '/api/events/' + editingId : '/api/events', {
-      method: editingId ? 'PUT' : 'POST',
-      body: JSON.stringify(payload),
-    });
+    const occurrence = e.target.dataset.occurrence;
+    const result = await api(
+      occurrence
+        ? '/api/events/' + editingId + '/action'
+        : editingId
+          ? '/api/events/' + editingId
+          : '/api/events',
+      {
+        method: occurrence ? 'POST' : editingId ? 'PUT' : 'POST',
+        body: JSON.stringify(
+          occurrence ? { action: 'editOccurrence', date: occurrence, event: payload } : payload,
+        ),
+      },
+    );
     $('#event-dialog').close();
     if (editingId) toast('แก้กิจกรรมแล้ว');
     else
@@ -363,11 +401,29 @@ $('#event-form').onsubmit = async (e) => {
     button.disabled = false;
   }
 };
-function editEvent(event) {
+async function editEvent(event, single = false) {
+  const occurrence = event.occurrence_date || event.date;
+  if (event.series_id && !single) {
+    try {
+      event = await api(`/api/events/${event.series_id}`, { groupId: event.group_id });
+    } catch (error) {
+      toast(error.message);
+      return;
+    }
+  }
   $('#detail-dialog').close();
   create(event.date);
   const form = $('#event-form');
-  form.dataset.editingId = event.id;
+  form.dataset.editingId = event.series_id || event.id;
+  if (single) form.dataset.occurrence = occurrence;
+  const recurrence = JSON.parse(event.recurrence || '{}');
+  form.elements.repeatFrequency.value = recurrence.frequency || 'none';
+  form.elements.repeatFrequency.disabled = single;
+  form.elements.repeatUntil.value = recurrence.until || event.date;
+  form.elements.repeatUntil.disabled = !recurrence.frequency;
+  if (single) form.elements.repeatUntil.disabled = true;
+  form.elements.draft.checked = event.lifecycle === 'draft';
+  form.elements.draft.disabled = true;
   for (const [field, value] of Object.entries({
     title: event.title,
     description: event.description,
@@ -387,7 +443,15 @@ function proposalCard(event, review) {
     top = element('div', 'proposal-top');
   top.append(
     element('h3', '', event.title),
-    element('span', `status ${event.status}`, statuses[event.status]),
+    element(
+      'span',
+      `status ${event.status}`,
+      event.lifecycle === 'draft'
+        ? 'ฉบับร่าง'
+        : event.lifecycle === 'cancelled'
+          ? 'ยกเลิก'
+          : statuses[event.status],
+    ),
   );
   card.append(top);
   card.append(
@@ -404,7 +468,9 @@ function proposalCard(event, review) {
   if (
     !review &&
     !event.source_id &&
-    (event.status === 'pending' || ['owner', 'manager', 'editor'].includes(state.group?.role))
+    (event.owner_id === state.session.user?.id ||
+      event.status === 'pending' ||
+      ['owner', 'manager', 'editor'].includes(state.group?.role))
   ) {
     const edit = element('button', '', 'แก้กิจกรรม');
     edit.onclick = () => editEvent(event);
@@ -439,6 +505,7 @@ function proposalCard(event, review) {
     }
     card.append(row);
   }
+  if (!review) groupUI.eventTools(card, event);
   return card;
 }
 async function page(name) {
@@ -446,14 +513,15 @@ async function page(name) {
     $('#login-dialog').showModal();
     return;
   }
-  if (['review', 'members', 'admin'].includes(name) && state.session.user?.role !== 'manager')
-    return;
+  if (['review', 'admin'].includes(name) && state.session.user?.role !== 'manager') return;
+  if (['members', 'history'].includes(name) && !state.group?.role) return;
   state.page = name;
   for (const p of [
     'calendar',
     'mine',
     'review',
     'members',
+    'history',
     'admin',
     'notifications',
     'preferences',
@@ -465,6 +533,7 @@ async function page(name) {
     mine: 'กิจกรรมของฉัน',
     review: 'ตรวจอนุมัติ',
     members: 'สมาชิกและสิทธิ์',
+    history: 'ประวัติกลุ่ม',
     admin: 'ตั้งค่าปฏิทิน',
     notifications: 'การแจ้งเตือน',
     preferences: 'ตั้งค่าของฉัน',
@@ -473,7 +542,8 @@ async function page(name) {
     calendar: 'นัดหมาย วันสำคัญ และกิจกรรมที่ผ่านการอนุมัติ',
     mine: 'ติดตามข้อเสนอและผลการตรวจในที่เดียว',
     review: 'ช่วยดูแลข้อมูลก่อนเผยแพร่ให้ชุมชน',
-    members: 'ดูแลสมาชิกและสิทธิ์เฉพาะปฏิทิน',
+    members: 'สมาชิกในกลุ่มเดียวกัน · สิทธิ์และวันที่เข้าร่วม',
+    history: 'ใครทำอะไร เมื่อไหร่ · แสดงเวลาไทย',
     admin: 'ตั้งค่าการอนุมัติและแจ้งเตือนผู้จัดการ',
     notifications: 'กิจกรรมใหม่ ผลตรวจ และรายการเตือน',
     preferences: 'เลือกการแจ้งเตือนให้เหมาะกับคุณ',
@@ -587,6 +657,7 @@ async function reload() {
     'calendar',
     'agenda',
     'members-list',
+    'history-list',
     'mine-list',
     'review-list',
     'notification-list',
@@ -597,19 +668,19 @@ async function reload() {
   const session = await api('/api/session');
   const groups = session.user ? await api('/api/groups') : [];
   const groupId = selectedGroup || session.user?.lastGroupId || groups[0]?.id || '';
-  const noGroup =
-    session.user && !groupId && !groups.length && !location.pathname.startsWith('/g/');
+  const noGroup = !groupId;
   let group = null;
   if (!noGroup) {
     try {
       group = await api('/api/group', { groupId });
     } catch (error) {
-      if (![403, 404].includes(error.status)) throw error;
+      if (![403, 404, 410].includes(error.status)) throw error;
       // Keep the selector usable after a membership is suspended or a saved group disappears.
       group = {
         id: groupId,
         slug: '',
-        name: 'กลุ่มนี้ไม่พร้อมให้เข้าถึง',
+        name: error.status === 410 ? 'ปฏิทินอยู่ในถังขยะ' : 'กลุ่มนี้ไม่พร้อมให้เข้าถึง',
+        trashed: error.status === 410,
         role: null,
         canRead: false,
         visibility: 'private',
@@ -617,7 +688,21 @@ async function reload() {
       toast(error.message);
     }
   }
-  const events = group?.canRead ? await api('/api/events', { groupId: group.id }) : [];
+  const savedView = session.user ? await api('/api/account/view') : { groupIds: [] };
+  const extraGroups = savedView.groupIds.filter((id) =>
+    groups.some((g) => g.id === id && !g.suspended),
+  );
+  const events = noGroup
+    ? await api('/api/public/events', { groupId: '' })
+    : group?.canRead
+      ? await api(
+          '/api/events' +
+            (session.user && group.role && extraGroups.length
+              ? '?groups=' + encodeURIComponent(extraGroups.join(','))
+              : ''),
+          { groupId: group.id },
+        )
+      : [];
   catalog ||= await api('/api/catalog');
   const preferences =
     session.user && group?.role
@@ -681,6 +766,7 @@ async function reload() {
 }
 reload()
   .then(async () => {
+    window.dispatchEvent(new Event('tutel:ready'));
     const invite = location.pathname.match(/^\/invite\/([^/]+)/);
     const connect = location.pathname.match(/^\/connect\/([^/]+)/);
     if (invite) await groupUI.join(decodeURIComponent(invite[1]));
@@ -712,7 +798,10 @@ reload()
     }
     if (params.has('notifications') && state.session.user) await page('notifications');
   })
-  .catch((error) => toast(error.message));
+  .catch((error) => {
+    if (!$('#app-loading').hidden) window.dispatchEvent(new Event('tutel:load-error'));
+    else toast(error.message);
+  });
 if (new URLSearchParams(location.search).has('auth')) {
   toast('เข้าสู่ระบบไม่สำเร็จ ตรวจการตั้งค่า OAuth แล้วลองใหม่');
   const params = new URLSearchParams(location.search);

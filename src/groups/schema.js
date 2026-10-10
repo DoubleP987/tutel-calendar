@@ -5,6 +5,12 @@ export const legacyGroupId = 'legacy-calendar';
 /** Add tenant boundaries without replacing existing event or account identifiers. */
 export function initializeGroups(db) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS group_trash (
+      group_id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+      deleted_by TEXT NOT NULL, deleted_at INTEGER NOT NULL, purge_after INTEGER NOT NULL,
+      previous_suspended INTEGER NOT NULL, purged_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS group_trash_expiry ON group_trash(purge_after,purged_at);
     CREATE TABLE IF NOT EXISTS groups (
       id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
       visibility TEXT NOT NULL DEFAULT 'private' CHECK(visibility IN ('private','public')),
@@ -32,6 +38,11 @@ export function initializeGroups(db) {
     CREATE TABLE IF NOT EXISTS audit_log (
       id TEXT PRIMARY KEY, group_id TEXT, actor TEXT NOT NULL,
       action TEXT NOT NULL, target TEXT NOT NULL, created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS audit_group_history ON audit_log(group_id,created_at DESC,id DESC);
+    CREATE TABLE IF NOT EXISTS audit_snapshots (
+      audit_id TEXT PRIMARY KEY REFERENCES audit_log(id) ON DELETE CASCADE,
+      actor_name TEXT NOT NULL, target_name TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS discord_bindings (
       id TEXT PRIMARY KEY, group_id TEXT NOT NULL REFERENCES groups(id),
@@ -91,13 +102,14 @@ export function initializeGroups(db) {
   add('oauth_states', 'return_to', "TEXT NOT NULL DEFAULT '/'");
   add('oauth_states', 'link_user_id', 'TEXT');
   db.exec('CREATE INDEX IF NOT EXISTS events_group ON events(group_id,status,date)');
-  db.prepare(`INSERT OR IGNORE INTO groups VALUES (?,?,?,'public',0,?,?)`).run(
-    legacyGroupId,
-    'cs-skru',
-    'CS SKRU',
-    db.prepare("SELECT value FROM settings WHERE key='calendar'").get()?.value || '{}',
-    new Date().toISOString(),
-  );
+  if (!db.prepare('SELECT group_id FROM group_trash WHERE group_id=?').get(legacyGroupId))
+    db.prepare(`INSERT OR IGNORE INTO groups VALUES (?,?,?,'public',0,?,?)`).run(
+      legacyGroupId,
+      'cs-skru',
+      'CS SKRU',
+      db.prepare("SELECT value FROM settings WHERE key='calendar'").get()?.value || '{}',
+      new Date().toISOString(),
+    );
   // Bootstrap only once. Later sign-ins cannot recreate revoked membership.
   if (!db.prepare("SELECT key FROM settings WHERE key='group-migration-v1'").get()) {
     const users = db.prepare('SELECT * FROM users ORDER BY rowid').all();
@@ -127,12 +139,29 @@ export function initializeGroups(db) {
 }
 
 export function recordAudit(db, actor, action, target, groupId = null) {
+  const id = randomUUID();
   db.prepare('INSERT INTO audit_log VALUES (?,?,?,?,?,?)').run(
-    randomUUID(),
+    id,
     groupId,
     String(actor),
     action,
     String(target),
     new Date().toISOString(),
+  );
+  if (!groupId) return;
+  const actorName = db.prepare('SELECT name FROM users WHERE id=?').get(String(actor))?.name;
+  let targetName;
+  if (action.includes('event.') || action.includes('event-'))
+    targetName = db
+      .prepare('SELECT title FROM events WHERE id=? AND group_id=?')
+      .get(String(target), groupId)?.title;
+  else if (action.includes('membership') || action.includes('transfer'))
+    targetName = db.prepare('SELECT name FROM users WHERE id=?').get(String(target))?.name;
+  else if (action.startsWith('group.') || action === 'platform.group-updated')
+    targetName = db.prepare('SELECT name FROM groups WHERE id=?').get(groupId)?.name;
+  db.prepare('INSERT INTO audit_snapshots VALUES (?,?,?)').run(
+    id,
+    actorName || (actor === 'system' ? 'ระบบ' : 'ผู้ดูแลระบบ'),
+    targetName || '',
   );
 }

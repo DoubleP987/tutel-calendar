@@ -3,6 +3,7 @@ import { db } from '../database/connection.js';
 import { claimEmailInvitations } from '../groups/invitations.js';
 import { legacyGroupId } from '../groups/schema.js';
 import { mergeVerifiedAccount } from './link-accounts.js';
+import { recordSession } from './account-settings.js';
 
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const random = () => randomBytes(32).toString('base64url');
@@ -72,7 +73,7 @@ export function identity(
   claimEmailInvitations(user);
   return user;
 }
-function session(res, user) {
+function session(res, user, agent = '') {
   const token = random();
   db.prepare('INSERT INTO sessions VALUES (?,?,?,?)').run(
     hash(token),
@@ -81,6 +82,7 @@ function session(res, user) {
     Date.now() + 28800000,
   );
   setCookie(res, 'calendar_sid', token, 28800);
+  recordSession(hash(token), agent);
 }
 export function authenticate(req, res, next) {
   const token = cookie(req, 'calendar_sid');
@@ -145,6 +147,7 @@ export function registerAuth(app) {
     session(
       res,
       identity('demo', role, role === 'manager' ? 'ผู้จัดการตัวอย่าง' : 'สมาชิกตัวอย่าง', role),
+      req.get('user-agent') || '',
     );
     res.json({ ok: true });
   });
@@ -262,7 +265,7 @@ export function registerAuth(app) {
         verifiedEmail,
         saved.link_user_id,
       );
-      session(res, user);
+      session(res, user, req.get('user-agent') || '');
       res.redirect(safeReturn(saved.return_to));
     } catch {
       // Do not log codes, access tokens or provider responses.
