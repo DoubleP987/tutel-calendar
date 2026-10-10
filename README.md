@@ -1,5 +1,7 @@
 # Tutel Calendar
 
+[Developer handbook](docs/DEVELOPMENT.md) · [คู่มือผู้พัฒนา](docs/DEVELOPMENT.th.md) · [Contributing / ขั้นตอนส่งงาน](CONTRIBUTING.md)
+
 Version **0.1.0** · by Double_P
 
 [ภาษาไทย](README.th.md) · [Live calendar](https://calendar.toomtoom.online/) · [User guide](docs/USER-GUIDE.md) · [Current status](docs/CURRENT-STATUS.md)
