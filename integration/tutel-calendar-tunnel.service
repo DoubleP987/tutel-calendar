@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloudflare Tunnel for Tutel Calendar
+After=network-online.target tutel-calendar.service
+Wants=network-online.target tutel-calendar.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/cloudflared tunnel --no-autoupdate run --token-file %h/tutel-calendar/secrets/tunnel-token
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=default.target

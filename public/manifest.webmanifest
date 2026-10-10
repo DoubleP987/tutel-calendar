@@ -1,0 +1,13 @@
+{
+  "id": "/",
+  "name": "Tutel Calendar",
+  "short_name": "Tutel📅",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f9f8",
+  "theme_color": "#237849",
+  "icons": [
+    { "src": "/assets/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

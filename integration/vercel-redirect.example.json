@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "https://calendar.toomtoom.online", "permanent": false },
+    {
+      "source": "/index.html",
+      "destination": "https://calendar.toomtoom.online",
+      "permanent": false
+    }
+  ]
+}

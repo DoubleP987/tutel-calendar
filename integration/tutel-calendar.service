@@ -1,0 +1,22 @@
+[Unit]
+Description=Tutel Calendar web application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/tutel-calendar/app
+ExecStart=%h/.local/bin/node src/server.js
+Environment=NODE_ENV=production
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/tutel-calendar
+ProtectHome=read-only
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=default.target
