@@ -51,11 +51,17 @@ export async function renderGroupHistory({ api, state, element, root }) {
   const groupId = state.groupId;
   let page = 1;
   root.replaceChildren(element('p', 'empty', 'กำลังโหลดประวัติ…'));
+
   async function load() {
     const result = await api(`/api/group/audit?page=${page}`, { groupId });
-    if (state.groupId !== groupId || !root.isConnected) return;
+
+    if (state.groupId !== groupId || !root.isConnected) {
+      return;
+    }
+
     root.replaceChildren();
     const list = element('ol', 'history-timeline');
+
     for (const item of result.items) {
       const row = element('li', 'history-item');
       const heading = element('p', 'history-heading');
@@ -64,15 +70,25 @@ export async function renderGroupHistory({ api, state, element, root }) {
         document.createTextNode(` · ${actions[item.action] || 'อัปเดตข้อมูลกลุ่ม'}`),
       );
       row.append(heading);
-      if (item.target_name) row.append(element('p', 'history-target', item.target_name));
+
+      if (item.target_name) {
+        row.append(element('p', 'history-target', item.target_name));
+      }
+
       const time = element('time', 'fine', groupDate(item.created_at));
       time.dateTime = item.created_at;
       row.append(time);
       list.append(row);
     }
+
     root.append(list);
-    if (!result.items.length) root.append(element('p', 'empty', 'ยังไม่มีประวัติในกลุ่มนี้'));
+
+    if (!result.items.length) {
+      root.append(element('p', 'empty', 'ยังไม่มีประวัติในกลุ่มนี้'));
+    }
+
     const controls = element('div', 'history-pagination');
+
     for (const [label, delta, disabled] of [
       ['ก่อนหน้า', -1, page === 1],
       ['ถัดไป', 1, !result.hasMore],
@@ -80,9 +96,11 @@ export async function renderGroupHistory({ api, state, element, root }) {
       const button = element('button', '', label);
       button.type = 'button';
       button.disabled = disabled;
+
       button.onclick = async () => {
         button.disabled = true;
         page += delta;
+
         try {
           await load();
         } catch (error) {
@@ -91,10 +109,13 @@ export async function renderGroupHistory({ api, state, element, root }) {
           root.append(element('p', 'notice', error.message));
         }
       };
+
       controls.append(button);
     }
+
     controls.insertBefore(element('span', 'fine', `หน้า ${page}`), controls.lastChild);
     root.append(controls);
   }
+
   await load();
 }

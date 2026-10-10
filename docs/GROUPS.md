@@ -1,16 +1,20 @@
 # Multi-group Calendar — implementation guide
 
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 ## Production invitation update — 10 October 2026
 
 The multi-group Calendar web application and invitation routes are now deployed to homeserver at https://calendar.toomtoom.online. Existing SQLite data was retained (548 events and two accounts at migration), and the previous app plus a consistent database backup are stored under `/home/doublep/tutel-calendar/backups/groups-20261010-101849`.
 
 Brevo SMTP is configured in the server-only `.env`. The verified sender is **Tutel Calendar <noreply@toomtoom.online>**, using STARTTLS on port 587. SMTP credentials are never included in documentation or Git. The key expires on 10 October 2027 and after 90 days of inactivity according to Brevo. Free account quota currently shows 300 emails per day.
 
-To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the exact verified account email, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. Confirmed CSV imports create preassigned invitations and queue email delivery in SQLite, processed one at a time. SMTP acceptance does not guarantee inbox placement. Failed sends are visible in invitation history and can be explicitly resent.
+To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the destination email address, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. Confirmed CSV imports create preassigned invitations and queue email delivery in SQLite, processed one at a time. SMTP acceptance does not guarantee inbox placement. Failed sends are visible in invitation history and can be explicitly resent.
 
 The deployed service is active and the live page displays the invitation form. No invitation/delivery test email was sent during this deployment; receiving an actual email has not been verified. Discord worker cutover and the private bot control-panel group integration have not been activated by this web update. Existing bot reminder behavior continues.
 
-Local revision: 10 October 2026. Calendar web/group invitation source is deployed; Discord worker/private control-panel cutover remains pending. Existing production behavior is described separately in DEPLOYMENT.md. This guide supersedes earlier single-calendar assumptions.
+Local revision: 10 October 2026. Calendar web/group invitation source is deployed; Grouped Discord reminder cutover remains pending; private-panel Calendar management is implemented. Existing production behavior is described separately in DEPLOYMENT.md. This guide supersedes earlier single-calendar assumptions.
 
 ## 1. Application boundaries
 
@@ -40,11 +44,11 @@ Private groups require membership. Public groups permit read-only viewing throug
 
 Google/Discord bootstrap administrator IDs and migrated original managers are privileged Calendar accounts. Review that bootstrap list before production migration. Calendar roles do not create private bot-panel accounts or server credentials.
 
-## 3. Invitations and preassigned people
+## 3. Invitations and CSV recipients
 
-Owners/managers can create a link or join code with 1–30 days validity and 1–500 uses; defaults are seven days and one use. Codes contain 12 random hexadecimal characters. Tokens are stored as SHA-256 hashes; plaintext links are shown only when created. Revoke unused invitations from the invitation list. Share private links deliberately.
+Owners/managers can create invitations with 1–30 days validity. Email/link invitations have one successful use; join codes allow 1–500 uses; defaults are seven days and one use. Codes contain 12 random hexadecimal characters. Tokens are stored as SHA-256 hashes; plaintext links are shown only when created. Revoke unused invitations from the invitation list. Share private links deliberately.
 
-An email invitation is assigned to an exact normalized provider-verified address, one use only. It creates a pending invitation, **not a fabricated user account**. When the invited person signs in, matching invitations are claimed. Existing members can refresh to claim newly created invitations. An invitation does not overwrite an existing role or bypass a membership suspension.
+An email invitation records its destination address but may be accepted by any Google/Discord account holding the link. It requires explicit acceptance, permits one successful use and creates no fabricated account. An existing membership keeps its role; a blocked membership is not bypassed. There is no automatic email-matched joining.
 
 CSV supports UTF-8/BOM, quoted fields and CRLF. Preview before confirmation. Maximum 500 rows and 100 KB; duplicate or invalid email rows prevent the entire import. Roles in CSV are member/editor only. Example:
 
@@ -54,11 +58,11 @@ student@parichat.skru.ac.th,Student,member
 editor@example.com,Editor,editor
 ```
 
-Preassignment needs no mail server. Actual invitation emails require SMTP_HOST, SMTP_PORT, SMTP_FROM and, when required by the provider, SMTP_USER/SMTP_PASSWORD. The sender uses TLS and Nodemailer; the web UI sends email invitations in one action, while link/code invitations are created for copying. Confirmed CSV imports create preassignments and queue emails. Existing active invitations may be resent while preserving their original role; resending rotates the link. A configured SMTP service, mail delivery and spam reputation are external prerequisites; Brevo SMTP has now been provisioned on homeserver; see the production invitation update above.
+Creating a copyable invitation link/code needs no mail server. Actual invitation emails require SMTP_HOST, SMTP_PORT, SMTP_FROM and, when required by the provider, SMTP_USER/SMTP_PASSWORD. The sender uses TLS and Nodemailer; the web UI sends email invitations in one action, while link/code invitations are created for copying. Confirmed CSV imports create single-use invitations and queue emails; they do not create accounts or memberships before acceptance. Existing active invitations may be resent while preserving their original role; resending rotates the link. A configured SMTP service, mail delivery and spam reputation are external prerequisites; Brevo SMTP has now been provisioned on homeserver; see the production invitation update above.
 
 ## 4. Accounts and OAuth
 
-Google uses basic OpenID/profile/email scopes. University Google accounts are supported; verified Gmail addresses or a provider-verified hosted-domain account can claim email invitations. Discord now requests `identify email`; users may need to consent again. Never trust a user-typed email for automatic membership.
+Google uses basic OpenID/profile/email scopes. University Google accounts are supported; Gmail and university Google Workspace accounts can sign in; any signed-in Google/Discord identity can explicitly accept an unused link invitation. Discord now requests `identify email`; users may need to consent again. Never trust a user-typed email for automatic membership.
 
 From account settings, link the other provider while signed in. A fresh OAuth callback and the current session prove both accounts. If two existing accounts are linked, memberships/events/notifications/subscriptions move transactionally to the current account; higher roles survive, suspensions are retained, and the other account's sessions are revoked. Similar display names or emails alone never merge accounts.
 
@@ -118,7 +122,7 @@ Keep CALENDAR_GROUPS_ENABLED=0 during migration: the old reminder scheduler cont
 
 Back up Calendar SQLite with a consistent SQLite backup or while stopped; a live WAL database may have committed rows in its WAL file. Keep the bot's own backup separately. Old event IDs remain, events migrate into the public `cs-skru` group, original members join that group once, and original settings are copied. New groups do not inherit personal activities; they read general dates from one shared dataset. Review original managers before migrating administrator privileges. Stop legacy import/publishing only after Calendar becomes authoritative; do not introduce a two-way sync loop. Imported source removal is not yet reconciled automatically.
 
-The Calendar web service and sender DNS have now been updated as described above. Source publication is separate from the pending bot worker/control-panel cutover. No cross-group isolation or email-delivery tests were run.
+The Calendar web service and sender DNS have now been updated as described above. Source publication is separate from the pending grouped Discord worker cutover. No cross-group isolation or email-delivery tests were run.
 
 ## 9. Source and API map
 
@@ -158,8 +162,8 @@ Owner-only deletion, exact-name confirmation and 30-day recovery are implemented
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## Group history and directory (10 October 2026)
 
-All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. Server source changes require a restart as part of deployment.

@@ -6,13 +6,13 @@ The multi-group Calendar web application and invitation routes are now deployed 
 
 Brevo SMTP is configured in the server-only `.env`. The verified sender is **Tutel Calendar <noreply@toomtoom.online>**, using STARTTLS on port 587. SMTP credentials are never included in documentation or Git. The key expires on 10 October 2027 and after 90 days of inactivity according to Brevo. Free account quota currently shows 300 emails per day.
 
-To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the exact verified account email, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. Confirmed CSV imports create preassigned invitations and queue email delivery in SQLite, processed one at a time. SMTP acceptance does not guarantee inbox placement. Failed sends are visible in invitation history and can be explicitly resent.
+To invite: sign in as group owner/manager, select the group, open **Manage group → Invite members**, choose **Send invitation by email**, enter the destination email address, select role/expiry, and press **Send invitation**. Email invitations send automatically; link/code invitations are created for copying without email. A failed send preserves the invitation link and the UI reports failure. Confirmed CSV imports create preassigned invitations and queue email delivery in SQLite, processed one at a time. SMTP acceptance does not guarantee inbox placement. Failed sends are visible in invitation history and can be explicitly resent.
 
 The deployed service is active and the live page displays the invitation form. No invitation/delivery test email was sent during this deployment; receiving an actual email has not been verified. Discord worker cutover and the private bot control-panel group integration have not been activated by this web update. Existing bot reminder behavior continues.
 
 ## Group integration update — 10 October 2026
 
-Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Grouped Discord reminder worker cutover remains pending; the privileged Calendar bridge and Feedback inbox in the private panel are implemented. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
 
 > Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
 

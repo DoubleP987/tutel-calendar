@@ -1,5 +1,7 @@
 # Group and event workflows
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
+
 ## Find the controls
 
 The calendar remains the main screen. Open the group selector to search your calendars, select one, create/join, choose calendars to display together, open trash or leave. Group administration contains invitations, all group events, Discord bindings, export and audit history. Account settings contain linked sign-in identities, ownership requests and active sessions. Advanced event actions are inside “Manage and history”; draft/recurrence fields are collapsed inside the event editor.
@@ -37,25 +39,25 @@ Account settings show approximate device types and expiry for active sessions, a
 - `public/workspace.js`: secondary dialogs and event action menus.
 - `public/groups.js`: group navigation/admin; `public/settings.js`: member and notification settings.
 
-| API | Purpose |
-| --- | --- |
-| `POST /api/group/leave` | Leave current group; owner receives 409 |
-| `DELETE /api/members/:id` | Remove a lower-ranked member |
-| `POST /api/group/transfer` | Create/replace seven-day ownership request |
-| `GET/DELETE /api/group/transfer` | Inspect/cancel outgoing request |
-| `GET /api/ownership-requests` | List incoming requests |
-| `POST /api/ownership-requests/:id/respond` | `{accept: true/false}` |
-| `GET/PUT /api/account/view` | `{groupIds: [...]}` up to 20 extra groups |
-| `GET /api/events?groups=id,id` | Authorized aggregate with one shared dataset |
-| `GET /api/group/events` | Manager's local activity inventory |
-| `GET /api/events/trash` | Own recoverable events, or all for managers/owners |
-| `POST /api/events/:id/action` | trash, restore, cancel, submit, cancelOccurrence, editOccurrence |
-| `GET /api/events/:id/history` | Authorized action history |
-| `GET /api/group/export` | Manager JSON export |
-| `GET/DELETE /api/accounts[/provider]` | Linked identities/unlink |
-| `GET /api/account/sessions` | Safe metadata; never bearer tokens/session hashes |
-| `DELETE /api/account/sessions/:id` | Revoke another own session |
-| `POST /api/account/logout-others` | Revoke all other sessions |
+| API                                        | Purpose                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| `POST /api/group/leave`                    | Leave current group; owner receives 409                          |
+| `DELETE /api/members/:id`                  | Remove a lower-ranked member                                     |
+| `POST /api/group/transfer`                 | Create/replace seven-day ownership request                       |
+| `GET/DELETE /api/group/transfer`           | Inspect/cancel outgoing request                                  |
+| `GET /api/ownership-requests`              | List incoming requests                                           |
+| `POST /api/ownership-requests/:id/respond` | `{accept: true/false}`                                           |
+| `GET/PUT /api/account/view`                | `{groupIds: [...]}` up to 20 extra groups                        |
+| `GET /api/events?groups=id,id`             | Authorized aggregate with one shared dataset                     |
+| `GET /api/group/events`                    | Manager's local activity inventory                               |
+| `GET /api/events/trash`                    | Own recoverable events, or all for managers/owners               |
+| `POST /api/events/:id/action`              | trash, restore, cancel, submit, cancelOccurrence, editOccurrence |
+| `GET /api/events/:id/history`              | Authorized action history                                        |
+| `GET /api/group/export`                    | Manager JSON export                                              |
+| `GET/DELETE /api/accounts[/provider]`      | Linked identities/unlink                                         |
+| `GET /api/account/sessions`                | Safe metadata; never bearer tokens/session hashes                |
+| `DELETE /api/account/sessions/:id`         | Revoke another own session                                       |
+| `POST /api/account/logout-others`          | Revoke all other sessions                                        |
 
 Writes use session authentication and CSRF. Group APIs enforce group context and member/manager/real-owner requirements. Public reads never expose review notes. Existing event status CHECK remains pending/published/rejected; lifecycle adds active/draft/cancelled/trash separately, preserving the database rather than rebuilding it. The ten-minute cleanup removes expired event trash and exceptions. Group purge removes related lifecycle tables, and account merges transfer/clean new account references. Secrets and databases are never part of a source deployment.
 

@@ -13,13 +13,20 @@ export function publishedEvents(groupId, { includeGroup = true, date = null } = 
     LEFT JOIN users u ON u.id=e.owner_id
     WHERE e.data_scope='group' AND e.group_id=? AND e.status='published' AND e.lifecycle='active'${range}`;
   const params = date ? [date, date] : [];
-  if (includeGroup) params.push(groupId, ...(date ? [date, date] : []));
+
+  if (includeGroup) {
+    params.push(groupId, ...(date ? [date, date] : []));
+  }
+
   const cacheKey = `${includeGroup}:${Boolean(date)}`;
-  if (!statements.has(cacheKey))
+
+  if (!statements.has(cacheKey)) {
     statements.set(
       cacheKey,
       db.prepare(`${shared}${includeGroup ? ` UNION ALL ${local}` : ''} ORDER BY date,time,title`),
     );
+  }
+
   const changes = includeGroup
     ? db
         .prepare(

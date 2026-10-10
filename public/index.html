@@ -6,23 +6,27 @@
     <meta name="theme-color" content="#f8faf9" />
     <title>Tutel Calendar · พื้นที่ของทุกกำหนดการ</title>
     <link rel="icon" href="/assets/tutel.png" />
-    <link rel="stylesheet" href="/styles.css?v=20261010-history" />
+    <link rel="stylesheet" href="/styles.css?v=20261010-share-link" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/assets/app-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Tutel📅" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <script src="/boot.js?v=20261010-loading" defer></script>
-    <script src="/app.js?v=20261010-history" type="module"></script>
+    <script src="/app.js?v=20261010-share-everyone" type="module"></script>
   </head>
   <body>
     <div id="app-loading" class="app-loading" role="status" aria-live="polite">
       <div class="loading-scene" aria-hidden="true">
         <div class="loading-orbit"></div>
         <div class="loading-logo"><img src="/assets/app-icon.png" alt="" /></div>
-        <span class="loading-spark spark-one"></span><span class="loading-spark spark-two"></span>
+        <span class="loading-spark spark-one"></span>
+        <span class="loading-spark spark-two"></span>
         <span class="loading-spark spark-three"></span>
       </div>
-      <strong class="loading-brand">Tutel<span>CALENDAR</span></strong>
+      <strong class="loading-brand">
+        Tutel
+        <span>CALENDAR</span>
+      </strong>
       <p id="loading-message">กำลังเตรียมปฏิทินของคุณ</p>
       <div class="loading-track" aria-hidden="true"><span></span></div>
       <button id="loading-retry" hidden type="button">ลองโหลดอีกครั้ง</button>
@@ -32,57 +36,79 @@
       <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="ปิดเมนู" hidden></button>
       <aside class="sidebar" id="sidebar" aria-label="เมนูปฏิทิน">
         <button id="sidebar-close" class="icon sidebar-close" aria-label="ปิดเมนู">✕</button>
-        <a class="brand" href="/"
-          ><img src="/assets/tutel.png" alt="" /><span
-            >Tutel<span class="brand-sub">CALENDAR</span></span
-          ></a
-        >
+        <a class="brand" href="/">
+          <img src="/assets/tutel.png" alt="" />
+          <span>
+            Tutel
+            <span class="brand-sub">CALENDAR</span>
+          </span>
+        </a>
         <button class="primary create" data-action="create">＋ เพิ่มกิจกรรม</button>
         <nav aria-label="ส่วนของปฏิทิน">
-          <button data-page="calendar" class="nav active">▦ <span>ปฏิทิน</span></button>
+          <button data-page="calendar" class="nav active">
+            ▦
+            <span>ปฏิทิน</span>
+          </button>
           <button data-page="mine" class="nav">
-            ◷ <span>กิจกรรมของฉัน</span><span id="mine-count" class="badge"></span>
+            ◷
+            <span>กิจกรรมของฉัน</span>
+            <span id="mine-count" class="badge"></span>
           </button>
           <button data-page="review" class="nav" id="review-nav" hidden>
-            ✓ <span>ตรวจอนุมัติ</span><span id="review-count" class="badge"></span>
+            ✓
+            <span>ตรวจอนุมัติ</span>
+            <span id="review-count" class="badge"></span>
           </button>
           <button data-page="members" class="nav" id="members-nav" hidden>
-            ♙ <span>สมาชิกและสิทธิ์</span>
+            ♙
+            <span>สมาชิกและสิทธิ์</span>
           </button>
           <button data-page="history" class="nav" id="history-nav" hidden>
-            ◷ <span>ประวัติกลุ่ม</span>
+            ◷
+            <span>ประวัติกลุ่ม</span>
           </button>
           <button data-page="admin" class="nav" id="admin-nav" hidden>
-            ⚙ <span>ตั้งค่าปฏิทิน</span>
+            ⚙
+            <span>ตั้งค่าปฏิทิน</span>
           </button>
           <button data-page="notifications" class="nav">
-            ♧ <span>การแจ้งเตือน</span><span id="unread-badge" class="red-badge" hidden></span>
+            ♧
+            <span>การแจ้งเตือน</span>
+            <span id="unread-badge" class="red-badge" hidden></span>
           </button>
-          <button data-page="preferences" class="nav">☷ <span>ตั้งค่าของฉัน</span></button>
+          <button data-page="preferences" class="nav">
+            ☷
+            <span>ตั้งค่าของฉัน</span>
+          </button>
         </nav>
         <section class="filters">
           <h3>แสดงในปฏิทิน</h3>
-          <label
-            ><input type="checkbox" value="academic" checked />
-            <i class="dot blue"></i> การศึกษา</label
-          >
-          <label
-            ><input type="checkbox" value="community" checked /> <i class="dot green"></i> กิจกรรม /
-            ชุมชน</label
-          >
-          <label
-            ><input type="checkbox" value="important" checked />
-            <i class="dot purple"></i> วันสำคัญ</label
-          >
-          <label
-            ><input type="checkbox" value="holiday" checked />
-            <i class="dot orange"></i> วันหยุด</label
-          >
+          <label>
+            <input type="checkbox" value="academic" checked />
+            <i class="dot blue"></i>
+            การศึกษา
+          </label>
+          <label>
+            <input type="checkbox" value="community" checked />
+            <i class="dot green"></i>
+            กิจกรรม / ชุมชน
+          </label>
+          <label>
+            <input type="checkbox" value="important" checked />
+            <i class="dot purple"></i>
+            วันสำคัญ
+          </label>
+          <label>
+            <input type="checkbox" value="holiday" checked />
+            <i class="dot orange"></i>
+            วันหยุด
+          </label>
         </section>
         <div class="side-note">
-          <span class="live-dot"></span> พื้นที่รวมกำหนดการ<br /><small
-            >เวลาไทย · Asia/Bangkok</small
-          >
+          <span class="live-dot"></span>
+          พื้นที่รวมกำหนดการ
+          <br />
+          <small>เวลาไทย · Asia/Bangkok</small>
         </div>
         <footer>
           <button id="install-open" class="install-entry" hidden>
@@ -91,7 +117,10 @@
             </svg>
             เพิ่มลงหน้าจอโฮม
           </button>
-          by Double_P <span>v0.1.0</span> · <a href="/privacy.html">ความเป็นส่วนตัว</a>
+          by Double_P
+          <span>v0.1.0</span>
+          ·
+          <a href="/privacy.html">ความเป็นส่วนตัว</a>
         </footer>
       </aside>
       <main>
@@ -118,16 +147,26 @@
           </button>
           <div id="group-controls" class="group-controls" aria-label="กลุ่มปฏิทิน"></div>
           <div class="account-actions">
-            <button id="theme" class="icon" aria-label="เปลี่ยนธีม">◐</button
-            ><button id="login-open">เข้าสู่ระบบ / สมัคร</button
-            ><button id="logout" hidden>ออกจากระบบ</button>
+            <button id="feedback-open" class="primary feedback-trigger" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 11a8 8 0 0 1-8 8H7l-5 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8Z" />
+                <path d="M7 9h10M7 13h7" />
+              </svg>
+              Feedback
+            </button>
+            <button id="theme" class="icon" aria-label="เปลี่ยนธีม">◐</button>
+            <button id="login-open">เข้าสู่ระบบ / สมัคร</button>
+            <button id="logout" hidden>ออกจากระบบ</button>
           </div>
         </header>
         <div id="demo-bar" class="demo-bar" hidden>
-          <span><b>ต้นแบบบนเครื่อง</b> · ข้อมูลตัวอย่างและบทบาททดลอง</span>
+          <span>
+            <b>ต้นแบบบนเครื่อง</b>
+            · ข้อมูลตัวอย่างและบทบาททดลอง
+          </span>
           <div>
-            <button data-demo="member">ลองเป็นสมาชิก</button
-            ><button data-demo="manager">ลองเป็นผู้จัดการ</button>
+            <button data-demo="member">ลองเป็นสมาชิก</button>
+            <button data-demo="manager">ลองเป็นผู้จัดการ</button>
           </div>
         </div>
         <section class="workspace">
@@ -143,18 +182,20 @@
           <section id="calendar-page">
             <div class="toolbar">
               <div class="date-controls">
-                <button id="today">วันนี้</button
-                ><button id="previous" class="icon" aria-label="ก่อนหน้า">‹</button
-                ><button id="next" class="icon" aria-label="ถัดไป">›</button>
+                <button id="today">วันนี้</button>
+                <button id="previous" class="icon" aria-label="ก่อนหน้า">‹</button>
+                <button id="next" class="icon" aria-label="ถัดไป">›</button>
                 <h2 id="range-title"></h2>
               </div>
               <div class="view-controls">
-                <label class="search"
-                  >⌕ <input id="search" placeholder="ค้นหากิจกรรม" aria-label="ค้นหากิจกรรม"
-                /></label>
+                <label class="search">
+                  ⌕
+                  <input id="search" placeholder="ค้นหากิจกรรม" aria-label="ค้นหากิจกรรม" />
+                </label>
                 <div class="segmented">
-                  <button data-view="month" class="selected">เดือน</button
-                  ><button data-view="week">สัปดาห์</button><button data-view="list">รายการ</button>
+                  <button data-view="month" class="selected">เดือน</button>
+                  <button data-view="week">สัปดาห์</button>
+                  <button data-view="list">รายการ</button>
                 </div>
               </div>
             </div>
@@ -206,22 +247,19 @@
           <section id="admin-page" hidden>
             <form id="admin-form" class="settings-card">
               <h2>การอนุมัติกิจกรรม</h2>
-              <label
-                >โหมดอนุมัติ<select name="approval">
+              <label>
+                โหมดอนุมัติ
+                <select name="approval">
                   <option value="manual">ตรวจทุกกิจกรรมก่อนเผยแพร่</option>
                   <option value="trusted">อัตโนมัติเฉพาะสมาชิกที่ไว้ใจ</option>
                   <option value="all">อัตโนมัติสำหรับสมาชิกทุกคน</option>
-                </select></label
-              >
+                </select>
+              </label>
               <p class="muted">เปลี่ยนเฉพาะกิจกรรมใหม่ รายการที่รอตรวจอยู่ยังต้องอนุมัติเอง</p>
               <h3>แจ้งเตือนผู้จัดการปฏิทิน</h3>
-              <label
-                ><input name="adminNotifyPending" type="checkbox" /> เมื่อมีกิจกรรมรออนุมัติ</label
-              ><label
-                ><input name="adminNotifyPublished" type="checkbox" />
-                เมื่อกิจกรรมเผยแพร่แบบอัตโนมัติ</label
-              >
-              <div class="notice">ผู้จัดการยังต้องเปิดรับแจ้งเตือนบนอุปกรณ์ของตัวเองด้วย</div>
+              <p class="muted">
+                แจ้งเตือนเฉพาะวันพรุ่งนี้ วันกิจกรรม และก่อนเริ่มตามเวลาที่ตั้งไว้
+              </p>
               <button class="primary" type="submit">บันทึกการตั้งค่า</button>
             </form>
           </section>
@@ -233,27 +271,45 @@
             <div id="notification-list" class="cards"></div>
           </section>
           <section id="preferences-page" hidden>
+            <form id="profile-form" class="settings-card">
+              <h2>ชื่อที่แสดง</h2>
+              <p id="profile-default" class="fine"></p>
+              <label>
+                ชื่อที่แสดงในปฏิทิน
+                <input name="name" maxlength="100" autocomplete="nickname" />
+              </label>
+              <p class="fine">
+                เว้นว่างเพื่อใช้ชื่อจาก Google หรือ Discord ตามเดิม ชื่อนี้ใช้กับทุกกลุ่มของบัญชีคุณ
+              </p>
+              <button class="primary" type="submit">บันทึกชื่อ</button>
+            </form>
             <form id="preferences-form" class="settings-card">
               <h2>การแจ้งเตือนของฉัน</h2>
-              <label
-                ><input name="notifyPublished" type="checkbox" /> เมื่อมีกิจกรรมใหม่เผยแพร่</label
-              ><label><input name="notifyReview" type="checkbox" /> ผลการอนุมัติกิจกรรมของฉัน</label
-              ><label><input name="notifyReminders" type="checkbox" /> เตือนกิจกรรมใกล้ถึง</label>
+              <label>
+                <input name="notifyReminders" type="checkbox" />
+                เตือนก่อนเริ่มและเมื่อถึงกิจกรรม
+              </label>
               <div class="form-row">
-                <label
-                  >กิจกรรมมีเวลา: เตือนก่อน<select name="leadMinutes">
+                <label>
+                  กิจกรรมมีเวลา: เตือนก่อน
+                  <select name="leadMinutes">
                     <option value="0">ตรงเวลา</option>
                     <option value="5">5 นาที</option>
                     <option value="15">15 นาที</option>
                     <option value="30">30 นาที</option>
                     <option value="60">1 ชั่วโมง</option>
                     <option value="1440">1 วัน</option>
-                  </select></label
-                ><label
-                  >กิจกรรมทั้งวัน: เวลาเตือน<input name="dayTime" type="time" value="07:00"
-                /></label>
+                  </select>
+                </label>
+                <label>
+                  กิจกรรมทั้งวัน: เวลาเตือน
+                  <input name="dayTime" type="time" value="07:00" />
+                </label>
               </div>
-              <p class="muted">ทั้งวันเตือนก่อน 1 วันตอนเที่ยง และวันจริงตามเวลาที่เลือก</p>
+              <p class="muted">
+                สรุปวันพรุ่งนี้เวลา 12:00 น. วันจริงตามเวลาที่เลือก และเตือนก่อนเริ่มกิจกรรม
+                ไม่แจ้งเมื่อเพิ่ม แก้ไข หรือลบ
+              </p>
               <h3>หมวดที่ต้องการรับแจ้งเตือน</h3>
               <div id="notify-categories" class="category-options"></div>
               <button class="primary" type="submit">บันทึกการแจ้งเตือน</button>
@@ -261,9 +317,9 @@
               <h3>อุปกรณ์นี้</h3>
               <p id="push-description" class="muted"></p>
               <div class="review-actions">
-                <button type="button" id="enable-push">เปิดแจ้งเตือนบนอุปกรณ์</button
-                ><button type="button" id="disable-push">ปิดบนอุปกรณ์นี้</button
-                ><button type="button" id="push-test">ส่งแจ้งเตือนทดลอง</button>
+                <button type="button" id="enable-push">เปิดแจ้งเตือนบนอุปกรณ์</button>
+                <button type="button" id="disable-push">ปิดบนอุปกรณ์นี้</button>
+                <button type="button" id="push-test">ส่งแจ้งเตือนทดลอง</button>
               </div>
               <p class="fine">
                 iPhone/iPad: เพิ่มเว็บไปหน้าจอโฮม แล้วเปิดจากไอคอนแอปเพื่ออนุญาตแจ้งเตือน
@@ -278,13 +334,20 @@
       <div class="dialog-content">
         <span class="dialog-logo">🐢</span>
         <h2>ร่วมเติมปฏิทินของเรา</h2>
-        <p>เข้าสู่ระบบครั้งแรกเพื่อสร้างบัญชีสมาชิก<br />ดูปฏิทินได้เสมอโดยไม่ต้องเข้าสู่ระบบ</p>
-        <a id="discord-login" class="oauth discord" href="/auth/discord">เข้าสู่ระบบด้วย Discord</a
-        ><a id="google-login" class="oauth google" href="/auth/google"
-          ><b>G</b> เข้าสู่ระบบด้วย Google</a
-        >
+        <p>
+          เข้าสู่ระบบครั้งแรกเพื่อสร้างบัญชีสมาชิก
+          <br />
+          ดูปฏิทินได้เสมอโดยไม่ต้องเข้าสู่ระบบ
+        </p>
+        <a id="discord-login" class="oauth discord" href="/auth/discord">เข้าสู่ระบบด้วย Discord</a>
+        <a id="google-login" class="oauth google" href="/auth/google">
+          <b>G</b>
+          เข้าสู่ระบบด้วย Google
+        </a>
         <p class="fine">
-          Google รองรับ Gmail และบัญชีมหาวิทยาลัย<br />รวม @parichat.skru.ac.th ที่เป็นบัญชี Google
+          Google รองรับ Gmail และบัญชีมหาวิทยาลัย
+          <br />
+          รวม @parichat.skru.ac.th ที่เป็นบัญชี Google
         </p>
         <p id="oauth-note" class="notice"></p>
       </div>
@@ -301,50 +364,73 @@
         <div class="form-content">
           <details class="workspace-tools">
             <summary>ฉบับร่างและกิจกรรมซ้ำ</summary>
-            <label
-              ><input type="checkbox" name="draft" /> บันทึกเป็นฉบับร่าง ยังไม่ส่งอนุมัติ</label
-            >
-            <label
-              >ทำซ้ำ<select name="repeatFrequency">
+            <label>
+              <input type="checkbox" name="draft" />
+              บันทึกเป็นฉบับร่าง ยังไม่ส่งอนุมัติ
+            </label>
+            <label>
+              ทำซ้ำ
+              <select name="repeatFrequency">
                 <option value="none">ไม่ทำซ้ำ</option>
                 <option value="daily">ทุกวัน</option>
                 <option value="weekly">ทุกสัปดาห์</option>
                 <option value="monthly">ทุกเดือน</option>
-              </select></label
-            >
-            <label>ทำซ้ำถึง<input type="date" name="repeatUntil" disabled /></label>
+              </select>
+            </label>
+            <label>
+              ทำซ้ำถึง
+              <input type="date" name="repeatUntil" disabled />
+            </label>
             <p class="fine">
               ทำซ้ำได้ภายในหนึ่งปี แก้ไขทั้งชุดผ่านรายการหลัก หรือยกเลิกเฉพาะครั้งจากปฏิทิน
             </p>
           </details>
-          <label
-            >ชื่อกิจกรรม<input
-              name="title"
-              required
-              maxlength="160"
-              placeholder="เช่น ประชุมทีมโครงงาน"
-          /></label>
+          <label>
+            ชื่อกิจกรรม
+            <input name="title" required maxlength="160" placeholder="เช่น ประชุมทีมโครงงาน" />
+          </label>
           <div class="form-row">
-            <label>วันที่เริ่ม<input type="date" name="date" required /></label
-            ><label>วันที่สิ้นสุด<input type="date" name="endDate" required /></label>
+            <label>
+              วันที่เริ่ม
+              <input type="date" name="date" required />
+            </label>
+            <label>
+              วันที่สิ้นสุด
+              <input type="date" name="endDate" required />
+            </label>
           </div>
-          <label class="check-label"><input type="checkbox" name="allDay" checked /> ทั้งวัน</label>
+          <label class="check-label">
+            <input type="checkbox" name="allDay" checked />
+            ทั้งวัน
+          </label>
           <div id="time-fields" class="form-row" hidden>
-            <label>เริ่ม<input type="time" name="time" value="09:00" /></label
-            ><label>สิ้นสุด<input type="time" name="endTime" value="10:00" /></label>
+            <label>
+              เริ่ม
+              <input type="time" name="time" value="09:00" />
+            </label>
+            <label>
+              สิ้นสุด
+              <input type="time" name="endTime" value="10:00" />
+            </label>
           </div>
           <div class="form-row">
-            <label
-              >หมวด<select name="category">
+            <label>
+              หมวด
+              <select name="category">
                 <option value="academic">การศึกษา</option>
                 <option value="community">กิจกรรม / ชุมชน</option>
                 <option value="important">วันสำคัญ</option>
                 <option value="holiday">วันหยุด</option>
-              </select></label
-            ><label>สีของกิจกรรม<input type="color" name="color" value="#4285f4" /></label>
+              </select>
+            </label>
+            <label>
+              สีของกิจกรรม
+              <input type="color" name="color" value="#4285f4" />
+            </label>
           </div>
-          <label
-            >รายละเอียด<textarea
+          <label>
+            รายละเอียด
+            <textarea
               name="description"
               rows="3"
               maxlength="2000"
@@ -357,8 +443,8 @@
           <p id="form-error" class="error" role="alert"></p>
         </div>
         <div class="dialog-footer">
-          <button type="button" data-close="event-dialog">ยกเลิก</button
-          ><button type="submit" class="primary">ส่งกิจกรรม</button>
+          <button type="button" data-close="event-dialog">ยกเลิก</button>
+          <button type="submit" class="primary">ส่งกิจกรรม</button>
         </div>
       </form>
     </dialog>

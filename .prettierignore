@@ -5,3 +5,14 @@ backups/
 .env
 .env.*
 package-lock.json
+feedback-uploads/
+secrets/
+coverage/
+*.sqlite*
+*.db*
+*.tar.gz
+*.zip
+*.pem
+*.key
+*.p12
+*.pfx

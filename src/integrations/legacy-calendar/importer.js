@@ -11,30 +11,58 @@ const format = new Intl.DateTimeFormat('en-CA', {
   minute: '2-digit',
   hourCycle: 'h23',
 });
+
 function local(value) {
   const parsed = new Date(value);
-  if (!Number.isFinite(parsed.valueOf())) throw new Error('Invalid source date');
+
+  if (!Number.isFinite(parsed.valueOf())) {
+    throw new Error('Invalid source date');
+  }
+
   const p = Object.fromEntries(format.formatToParts(parsed).map((x) => [x.type, x.value]));
   return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
 }
 
 /** Import the old public snapshot without sharing admin accounts or credentials. */
 export function startSourceSync() {
-  if (!source) return () => {};
+  if (!source) {
+    return () => {};
+  }
+
   const url = new URL(source);
-  if (url.protocol !== 'https:') throw new Error('Calendar source requires HTTPS');
+
+  if (url.protocol !== 'https:') {
+    throw new Error('Calendar source requires HTTPS');
+  }
+
   let running = false;
+
   async function sync() {
-    if (running) return;
+    if (running) {
+      return;
+    }
+
     running = true;
+
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (!response.ok) throw new Error(`Source HTTP ${response.status}`);
+
+      if (!response.ok) {
+        throw new Error(`Source HTTP ${response.status}`);
+      }
+
       const text = await response.text();
-      if (text.length > 4000000) throw new Error('Source too large');
+
+      if (text.length > 4000000) {
+        throw new Error('Source too large');
+      }
+
       const snapshot = JSON.parse(text);
-      if (!Array.isArray(snapshot.events) || snapshot.events.length > 10000)
+
+      if (!Array.isArray(snapshot.events) || snapshot.events.length > 10000) {
         throw new Error('Invalid snapshot');
+      }
+
       const now = new Date().toISOString();
       const legacyTrashed = db
         .prepare("SELECT group_id FROM group_trash WHERE group_id='legacy-calendar'")
@@ -72,16 +100,64 @@ export function startSourceSync() {
             e.publicHoliday || e.systemHoliday ? 'shared' : 'group',
           ];
         });
-      const insert = db.prepare(`INSERT INTO events
-        (id,title,description,date,end_date,time,end_time,all_day,color,category,status,created_at,updated_at,source_categories,source_id,source_occurrence,data_scope)
-        VALUES (?,?,?,?,?,?,?,?,?,?,'published',?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
-        title=excluded.title,description=excluded.description,date=excluded.date,end_date=excluded.end_date,
-        time=excluded.time,end_time=excluded.end_time,all_day=excluded.all_day,color=excluded.color,
-        category=excluded.category,source_categories=excluded.source_categories,source_id=excluded.source_id,
-        source_occurrence=excluded.source_occurrence,data_scope=excluded.data_scope,updated_at=excluded.updated_at`);
+      const insert = db.prepare(`
+        INSERT INTO events (id,
+           title,
+           description,
+           date,
+           end_date,
+           time,
+           end_time,
+           all_day,
+           color,
+           category,
+           status,
+           created_at,
+           updated_at,
+           source_categories,
+           source_id,
+           source_occurrence,
+           data_scope)
+        VALUES (?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           'published',
+           ?,
+           ?,
+           ?,
+           ?,
+           ?,
+           ?)
+        ON CONFLICT(id) DO UPDATE
+        SET title=excluded.title,
+           description=excluded.description,
+           date=excluded.date,
+           end_date=excluded.end_date,
+           time=excluded.time,
+           end_time=excluded.end_time,
+           all_day=excluded.all_day,
+           color=excluded.color,
+           category=excluded.category,
+           source_categories=excluded.source_categories,
+           source_id=excluded.source_id,
+           source_occurrence=excluded.source_occurrence,
+           data_scope=excluded.data_scope,
+           updated_at=excluded.updated_at
+      `);
       db.exec('BEGIN IMMEDIATE');
+
       try {
-        for (const row of rows) insert.run(...row);
+        for (const row of rows) {
+          insert.run(...row);
+        }
+
         db.prepare(
           "INSERT INTO settings VALUES ('source-sync',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         ).run(
@@ -92,6 +168,7 @@ export function startSourceSync() {
         db.exec('ROLLBACK');
         throw error;
       }
+
       console.log(`[source-sync] imported ${rows.length} occurrences`);
     } catch (error) {
       console.error('[source-sync]', error.message);
@@ -99,6 +176,7 @@ export function startSourceSync() {
       running = false;
     }
   }
+
   void sync();
   const timer = setInterval(sync, 60000);
   timer.unref();

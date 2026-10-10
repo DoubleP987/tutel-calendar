@@ -35,41 +35,55 @@ export function initializeSchema(db) {
       .prepare('PRAGMA table_info(events)')
       .all()
       .some((c) => c.name === 'source_categories')
-  )
+  ) {
     db.exec("ALTER TABLE events ADD COLUMN source_categories TEXT NOT NULL DEFAULT '[]'");
-  for (const name of ['source_id', 'source_occurrence'])
+  }
+
+  for (const name of ['source_id', 'source_occurrence']) {
     if (
       !db
         .prepare('PRAGMA table_info(events)')
         .all()
         .some((c) => c.name === name)
-    )
+    ) {
       db.exec(`ALTER TABLE events ADD COLUMN ${name} TEXT NOT NULL DEFAULT ''`);
+    }
+  }
+
   const columns = new Set(
     db
       .prepare('PRAGMA table_info(users)')
       .all()
       .map((c) => c.name),
   );
+
   for (const [name, definition] of [
     ['preferences', "TEXT NOT NULL DEFAULT '{}'"],
     ['auto_approve', 'INTEGER NOT NULL DEFAULT 0'],
     ['blocked', 'INTEGER NOT NULL DEFAULT 0'],
-  ])
-    if (!columns.has(name)) db.exec(`ALTER TABLE users ADD COLUMN ${name} ${definition}`);
+  ]) {
+    if (!columns.has(name)) {
+      db.exec(`ALTER TABLE users ADD COLUMN ${name} ${definition}`);
+    }
+  }
+
   db.exec(`
-  CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL);
-  CREATE TABLE IF NOT EXISTS notifications (
-    id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),
-    title TEXT NOT NULL,body TEXT NOT NULL,event_id TEXT,
-    kind TEXT NOT NULL,created_at TEXT NOT NULL,read_at TEXT,
-    dedupe TEXT NOT NULL,UNIQUE(user_id,dedupe)
-  );
-  CREATE TABLE IF NOT EXISTS push_subscriptions (
-    endpoint TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),
-    subscription TEXT NOT NULL,created_at TEXT NOT NULL
-  );
-`);
+    CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,
+       value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS notifications ( id TEXT PRIMARY KEY,
+       user_id TEXT NOT NULL REFERENCES users(id),
+       title TEXT NOT NULL,
+       body TEXT NOT NULL,
+       event_id TEXT,
+       kind TEXT NOT NULL,
+       created_at TEXT NOT NULL,
+       read_at TEXT,
+       dedupe TEXT NOT NULL,
+       UNIQUE(user_id,
+       dedupe) ); CREATE TABLE IF NOT EXISTS push_subscriptions ( endpoint TEXT PRIMARY KEY,
+       user_id TEXT NOT NULL REFERENCES users(id),
+       subscription TEXT NOT NULL,
+       created_at TEXT NOT NULL );
+  `);
   db.prepare("INSERT OR IGNORE INTO settings VALUES ('calendar',?)").run(
     JSON.stringify({
       approval: 'manual',

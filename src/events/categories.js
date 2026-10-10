@@ -18,8 +18,11 @@ export const defaultCategories = ['academic', 'community', 'important', 'holiday
 export const defaultPreferences = {
   categories: defaultCategories,
   notifyCategories: defaultCategories,
-  notifyPublished: true,
-  notifyReview: true,
+  notifyPublished: false,
+  notifyReview: false,
+  notifyChanges: false,
+  notifyDaily: true,
+  notifyTomorrow: true,
   notifyReminders: true,
   leadMinutes: 15,
   dayTime: '07:00',

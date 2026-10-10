@@ -1,5 +1,9 @@
 # Invitation delivery / การส่งคำเชิญ
 
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 ## 10 October 2026 update
 
 Manual email invitations and confirmed CSV imports both queue SMTP delivery in SQLite.
@@ -38,7 +42,6 @@ No existing invitations are automatically mailed merely by deploying this update
 Historical records have no delivery status until explicitly resent. This release did not
 send a new test email or mass-resend previous invitations.
 
-
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.

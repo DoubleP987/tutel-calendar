@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
+import { registerFeedback } from './feedback/routes.js';
 import { fileURLToPath } from 'node:url';
 import { authenticate, registerAuth, demo } from './auth/oauth.js';
 import { registerEvents } from './events/routes.js';
@@ -26,14 +27,19 @@ import {
 
 const host = process.env.HOST || '127.0.0.1';
 const base = new URL(process.env.BASE_URL || 'http://127.0.0.1:3100');
+
 if (
   demo &&
   (!['127.0.0.1', '::1', 'localhost'].includes(host) ||
     !['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname))
-)
+) {
   throw new Error('Demo must bind to loopback and use a localhost BASE_URL.');
-if (!demo && base.protocol !== 'https:')
+}
+
+if (!demo && base.protocol !== 'https:') {
   throw new Error('Real OAuth mode requires HTTPS BASE_URL.');
+}
+
 const app = express();
 initializeInvitationDelivery();
 initializeLifecycle();
@@ -46,6 +52,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         'style-src-attr': ["'unsafe-inline'"],
+        'img-src': ["'self'", 'data:', 'blob:'],
         'upgrade-insecure-requests': demo ? null : [],
       },
     },
@@ -66,6 +73,7 @@ registerWorkflow(app);
 registerBindings(app);
 registerDiscordWorker(app);
 registerControlIntegration(app);
+registerFeedback(app);
 registerEvents(app);
 registerPreferences(app);
 registerAdministration(app);
@@ -73,10 +81,13 @@ registerNotifications(app);
 const stopReminders = startReminderScheduler();
 const stopSource = startSourceSync();
 const stopInvitationDelivery = startInvitationDelivery();
+
 app.get('/api/health', (req, res) => res.json({ ok: true, version: '0.1.0' }));
+
 app.get(['/g/:slug', '/invite/:token', '/connect/:token'], (req, res) =>
   res.sendFile(fileURLToPath(new URL('../public/index.html', import.meta.url))),
 );
+
 app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
 app.use((error, req, res, next) => {
   console.error('[request]', error.name);
@@ -95,6 +106,7 @@ const cleanup = setInterval(() => {
   db.prepare('DELETE FROM discord_connection_grants WHERE expires_at<?').run(Date.now());
 }, 600000);
 cleanup.unref();
+
 async function shutdown() {
   stopSource();
   stopReminders();
@@ -105,5 +117,6 @@ async function shutdown() {
     process.exit(0);
   });
 }
+
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);

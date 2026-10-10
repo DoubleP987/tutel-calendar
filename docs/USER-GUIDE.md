@@ -1,5 +1,11 @@
 # User guide
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
+
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 [ภาษาไทย](USER-GUIDE.th.md) · [Operational status](CURRENT-STATUS.md)
 
 ## Contents
@@ -147,4 +153,8 @@ These calendar additions were reviewed and formatted; no destructive production 
 
 ## Group history and directory (10 October 2026)
 
-All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. Server source changes require a restart as part of deployment.
+
+## Current source and learning material / โค้ดและสื่อเรียนรู้ปัจจุบัน
+
+The repository conventions are documented in [CODE-STYLE.md](CODE-STYLE.md). The independent Learning Lab is at D:/Tutel-Learning-Lab, contains current snapshots of both repositories, and is not deployed or published with either project. Earlier architecture examples are explicitly identified as historical; current feature explanations take precedence.

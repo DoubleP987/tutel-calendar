@@ -1,5 +1,9 @@
 # Tutel Calendar
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](docs/CURRENT-FEATURES.md)
+
+[Source readability / แนวทางจัดโค้ด](docs/CODE-STYLE.md)
+
 [Developer handbook](docs/DEVELOPMENT.md) · [คู่มือผู้พัฒนา](docs/DEVELOPMENT.th.md) · [Contributing / ขั้นตอนส่งงาน](CONTRIBUTING.md)
 
 Version **0.1.0** · by Double_P
@@ -15,7 +19,7 @@ Independent calendar application for private groups, shared general dates, propo
 - Holidays and observances stored once, combined with each group's activities when read. Group creation copies no date rows.
 - Google/Discord sign-in, explicit verified account linking and multiple group memberships.
 - Owner/manager/editor/member roles and manual/trusted/all approval policies.
-- Link/code/email invitations, single-action email sending and CSV preassignment.
+- Link/code/email invitations, single-action email sending and CSV single-use invitations.
 - Per-group display/reminder preferences, inbox, Web Push and Home Screen manifest.
 - Server-side group authorization, CSRF protection and parameterized SQLite queries.
 
@@ -23,9 +27,9 @@ Independent calendar application for private groups, shared general dates, propo
 
 Calendar web/groups/invitations/sidebar/shared dates are deployed on homeserver through Cloudflare Tunnel. Migration retained 548 events, classified as 542 shared and 6 group-specific at that time. These are snapshot counts, not limits.
 
-Production Discord reminders still use the original TutelBot. Calendar implements delivery APIs; worker/control-panel cutover remains pending. The Discord OAuth application is not a second running Calendar bot. Simultaneous multi-group display and explicit Discord-link activity viewing are also pending.
+Production Discord reminders still use the original TutelBot. Calendar implements delivery APIs; grouped reminder worker cutover remains pending; the privileged private-panel bridge is implemented. The Discord OAuth application is not a second running Calendar bot. Authorized multi-group display and explicit group viewing links are implemented.
 
-SMTP is configured; actual invitation receipt and device Push/badging are not verified end-to-end. Netlify redirect deployment remains credit-blocked. Website hosting does not fail over to Oracle.
+SMTP is configured and one authorized Gmail invitation was observed in the inbox; mass CSV delivery and physical-device Push/badging are not fully verified. Netlify redirect deployment remains credit-blocked. Website hosting does not fail over to Oracle.
 
 ## Local setup
 
@@ -90,8 +94,16 @@ npm run format and npm run format:check use Prettier. Formatting is not behavior
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## Group history and directory (10 October 2026)
 
-All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](docs/GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](docs/GROUP-HISTORY.md) for API changes, implementation and retention limitations. Server source changes require a restart as part of deployment.
+
+## Feedback
+
+Signed-in users can send Feedback with up to three private images. The main Tutel Hub control panel provides an admin-only inbox. See [Feedback guide and API](docs/FEEDBACK.md).
+
+## Invitation links and display names
+
+See [คำเชิญใช้ครั้งเดียวและชื่อที่แสดง / guide](docs/INVITATIONS-AND-PROFILE.md).

@@ -1,5 +1,9 @@
 # Tutel Calendar
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](docs/CURRENT-FEATURES.md)
+
+[Source readability / แนวทางจัดโค้ด](docs/CODE-STYLE.md)
+
 [Developer handbook](docs/DEVELOPMENT.md) · [คู่มือผู้พัฒนา](docs/DEVELOPMENT.th.md) · [Contributing / ขั้นตอนส่งงาน](CONTRIBUTING.md)
 
 เวอร์ชัน **0.1.0** · by Double_P
@@ -38,7 +42,7 @@ SQLite เก็บใน data/calendar.sqlite โปรแกรมสร้า
 
 เว็บ ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว ย้ายข้อมูลเดิม 548 รายการ แบ่งเป็นวันกลาง 542 และเฉพาะกลุ่ม 6 จำนวนเป็นสถานะตอนย้าย ไม่ใช่โควตา
 
-บอทแจ้งเตือนจริงยังใช้ TutelBot เดิม API รุ่นใหม่มีแล้ว แต่ worker/control panel bridge ยังไม่ได้เปิดแทนของเดิม Tutel Calendar ใน Discord Developer Portal ใช้เว็บ OAuth ยังไม่ใช่บอทใหม่ที่รันอยู่ การแสดงหลายกลุ่มพร้อมกันและลิงก์ Discord เฉพาะกลุ่มยังเป็นงานค้าง
+บอทแจ้งเตือนจริงยังใช้ TutelBot เดิม API รุ่นใหม่มีแล้ว แต่ worker แจ้งเตือนกลุ่มยังไม่ได้เปิดแทนของเดิม ส่วน bridge ของ Control Panel และ Feedback ใช้งานได้แล้ว Tutel Calendar ใน Discord Developer Portal ใช้เว็บ OAuth ยังไม่ใช่บอทใหม่ที่รันอยู่ การแสดงหลายกลุ่มพร้อมกันและลิงก์ Discord เฉพาะกลุ่มยังเป็นงานค้าง
 
 SMTP ตั้งบนเซิร์ฟเวอร์แล้ว แต่ยังไม่ยืนยันการได้รับเมลจริงและ Push/badge บนอุปกรณ์ Netlify ยังติดเครดิต เว็บไม่สลับไป Oracle เมื่อ homeserver ดับ
 
@@ -54,8 +58,16 @@ Git ไม่รวม .env ฐานข้อมูล session keys private bac
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษาไทย](docs/WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
 
 สมาชิกทุก role อ่านรายชื่อ สิทธิ์ และเวลาที่เข้าร่วมกลุ่มเดียวกันได้ พร้อมหน้าประวัติแบ่งหน้า แสดงว่าใครทำอะไรกับรายการไหน เวลาไทย ปุ่มจัดการยังจำกัด role บันทึกใหม่เก็บชื่อสำรองหลังลบรายการ ไม่สร้างประวัติเก่าย้อนหลัง ไม่แสดงอีเมลหรือ token คำเชิญ ดู [คู่มือประวัติกลุ่ม](docs/GROUP-HISTORY.th.md) สำหรับ API โครงสร้างและข้อจำกัด ต้องเริ่มเซิร์ฟเวอร์ใหม่เมื่อ deploy โค้ดรุ่นนี้
+
+## Feedback
+
+ผู้ที่เข้าสู่ระบบส่ง Feedback พร้อมแนบรูปได้สูงสุด 3 รูป กล่องรับอยู่ใน Control Panel หลักและเปิดได้เฉพาะแอดมินของ panel ดู [คู่มือและการเชื่อมต่อ](docs/FEEDBACK.md)
+
+## Invitation links and display names
+
+See [คำเชิญใช้ครั้งเดียวและชื่อที่แสดง / guide](docs/INVITATIONS-AND-PROFILE.md).

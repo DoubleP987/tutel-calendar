@@ -1,9 +1,16 @@
 import { existsSync, readFileSync, appendFileSync } from 'node:fs';
 import webPush from 'web-push';
+
 const path = '.env';
-if (!existsSync(path)) throw new Error('Copy .env.example to .env first.');
-if (/^VAPID_PRIVATE_KEY=.+/m.test(readFileSync(path, 'utf8')))
+
+if (!existsSync(path)) {
+  throw new Error('Copy .env.example to .env first.');
+}
+
+if (/^VAPID_PRIVATE_KEY=.+/m.test(readFileSync(path, 'utf8'))) {
   throw new Error('Keys already exist; keep them to preserve subscriptions.');
+}
+
 const keys = webPush.generateVAPIDKeys();
 appendFileSync(
   path,

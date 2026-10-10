@@ -10,11 +10,11 @@ Active → owner-confirmed trash → restore within 30 days, or permanent remova
 
 ## API
 
-| Route | Authorization | Behavior |
-| --- | --- | --- |
-| `DELETE /api/group` | Signed in, CSRF, real owner, selected group | Body `{ "name": "exact current name" }`; returns `ok` and `purgeAfter` |
-| `GET /api/groups/trash` | Signed in | Returns only owned, recoverable groups and their deadlines |
-| `POST /api/groups/:id/restore` | Signed in, CSRF, real owner | Returns `id` and `slug`; rejects expired trash |
+| Route                          | Authorization                               | Behavior                                                               |
+| ------------------------------ | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `DELETE /api/group`            | Signed in, CSRF, real owner, selected group | Body `{ "name": "exact current name" }`; returns `ok` and `purgeAfter` |
+| `GET /api/groups/trash`        | Signed in                                   | Returns only owned, recoverable groups and their deadlines             |
+| `POST /api/groups/:id/restore` | Signed in, CSRF, real owner                 | Returns `id` and `slug`; rejects expired trash                         |
 
 The browser uses its existing group header and CSRF handling. The delete UI requires an exact name before enabling confirmation. Restore preserves events, roles and preferences, reinstates the earlier suspension flag and removes the trash record. It does not revive revoked invitation links or expired delivery jobs, or replay missed notifications.
 
@@ -32,7 +32,6 @@ This feature stops the calendar website's grouped notification pipeline. The ori
 
 Deployment backs up the live SQLite database and replaced source files before restart. Do not exercise destructive flows on real calendars for deployment checks. This implementation was reviewed and deployed without deleting an existing calendar; an isolated delete/restore/expiry integration test remains to be performed when explicitly requested.
 
-
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.

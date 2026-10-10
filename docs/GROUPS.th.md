@@ -1,5 +1,9 @@
 # ระบบปฏิทินหลายกลุ่ม — คู่มือภาษาไทย
 
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 ## อัปเดตเว็บจริง — 10 ตุลาคม 2026
 
 เว็บระบบกลุ่มและปุ่มเชิญสมาชิกขึ้นใช้งานบน homeserver แล้ว เก็บกิจกรรมเดิม 548 รายการและบัญชีเดิมไว้ครบ สำรองทั้งโค้ดและ SQLite ก่อนอัปเดต
@@ -62,7 +66,7 @@ student@parichat.skru.ac.th,นักศึกษา,member
 editor@example.com,ผู้แก้ไข,editor
 ```
 
-เตรียมรายชื่อได้โดยไม่ใช้ SMTP แต่ถ้าต้องการให้เมลถึงผู้รับจริง ต้องตั้ง SMTP_HOST, SMTP_PORT, SMTP_FROM และบัญชีที่ผู้ให้บริการกำหนดก่อน มีช่องติ๊กส่งอีเมลแยก ไม่ส่งเมล CSV จำนวนมากอัตโนมัติ รอบนี้ยังไม่ได้สมัครหรือทดสอบบริการอีเมล
+สร้างลิงก์หรือรหัสเชิญเพื่อคัดลอกได้โดยไม่ใช้ SMTP ส่วนคำเชิญอีเมลและ CSV ที่ยืนยันจะเข้าคิวส่งผ่าน SMTP ที่ตั้งบน homeserver แล้ว ไม่มีช่องติ๊กส่งอีเมลซ้ำ การสร้างคำเชิญยังไม่สร้างสมาชิกจนกว่าจะกดรับ และสถานะผู้ให้บริการรับเมลไม่ยืนยันว่าถึง inbox ทุกคน
 
 ## 4. บัญชี Google/Discord
 
@@ -140,7 +144,7 @@ Owner-only deletion, exact-name confirmation and 30-day recovery are implemented
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
 

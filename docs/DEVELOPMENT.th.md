@@ -1,5 +1,11 @@
 # คู่มือผู้พัฒนา Tutel Calendar
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
+
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 [English](DEVELOPMENT.md) · [ส่งงาน](../CONTRIBUTING.md) · [สถานะจริง](CURRENT-STATUS.md)
 
 ปรับปรุง 10 ตุลาคม 2569 ใช้ CURRENT-STATUS.md อ้างอิงว่าอะไรขึ้นจริง คู่มือนี้ไม่ใช่หลักฐานว่า worker ใหม่หรือ delivery tests ทำเสร็จแล้ว
@@ -161,7 +167,7 @@ Binding มี group/channel/categories/daily time/previous-day/timed Web remind
 
 ## 9. ตรวจงานและ debug
 
-repo นี้ **ยังไม่มี automated test suite หรือ npm test script** ห้ามเรียก format check/health ว่าทดสอบระบบครบ คำสั่งต่อไปนี้ให้ dev ใช้เมื่อมีคำสั่งให้ตรวจ ไม่ได้รันแค่เพื่อเขียนคู่มือ:
+repo นี้มีไฟล์ทดสอบ Node แบบแยกฐานข้อมูล `tests/group-history.test.js` แต่ยังไม่มี npm test script หรือ suite ที่ครอบคลุมระบบทั้งหมด ห้ามเรียก format check/health ว่าทดสอบระบบครบ คำสั่งต่อไปนี้ให้ dev ใช้เมื่อมีคำสั่งให้ตรวจ ไม่ได้รันแค่เพื่อเขียนคู่มือ:
 
 ```powershell
 npm run format:check
@@ -204,7 +210,7 @@ Rollback app แยกจาก DB Additive schema ควรให้ release �
 
 **ส่งต่อ dev:** repo/revision Node/service/tunnel owner ช่องรับ secrets นอก Git OAuth callback/audience bootstrap admin backup/restore source/deletion policy SMTP sender/key lifetime Push key lifecycle role/binding/cutover และสิ่งที่ตรวจจริง
 
-**งานค้าง:** หลายกลุ่มพร้อมกัน Discord-link viewing worker/panel cutover Calendar Discord client แยกรัน native recurrence multi-host Web reminders automated tests mail/Push verification และ website failover ทั้งหมดนี้ยังไม่ใช่ฟีเจอร์เสร็จ อ่าน CURRENT-STATUS.md กับคู่มือ bot ก่อนแก้ contract ร่วม
+**งานค้าง:** ย้ายช่องและเปิด worker แจ้งเตือน Discord ของกลุ่ม บอท Calendar แยก process ระบบประสาน web reminders หลายเครื่อง การทดสอบครบทุก flow/อุปกรณ์ และ website failover ส่วนการแสดงหลายกลุ่ม ลิงก์ดูปฏิทิน recurring แบบมีขอบเขต และ bridge ของ Panel ทำแล้ว ดู CURRENT-STATUS.md
 
 ## Mobile installation (10 October 2026)
 
@@ -216,8 +222,12 @@ Owner-only deletion, exact-name confirmation and 30-day recovery are implemented
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
 
 สมาชิกทุก role อ่านรายชื่อ สิทธิ์ และเวลาที่เข้าร่วมกลุ่มเดียวกันได้ พร้อมหน้าประวัติแบ่งหน้า แสดงว่าใครทำอะไรกับรายการไหน เวลาไทย ปุ่มจัดการยังจำกัด role บันทึกใหม่เก็บชื่อสำรองหลังลบรายการ ไม่สร้างประวัติเก่าย้อนหลัง ไม่แสดงอีเมลหรือ token คำเชิญ ดู [คู่มือประวัติกลุ่ม](GROUP-HISTORY.th.md) สำหรับ API โครงสร้างและข้อจำกัด ต้องเริ่มเซิร์ฟเวอร์ใหม่เมื่อ deploy โค้ดรุ่นนี้
+
+## Source readability / รูปแบบโค้ดปัจจุบัน
+
+See [the repository conventions](CODE-STYLE.md): explicit control-flow braces, one declaration per statement, paragraphs by responsibility, formatted embedded HTML and multiline SQL with bound parameters.

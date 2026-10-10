@@ -10,6 +10,163 @@
   --hover: #f1f5f2;
   --shadow: 0 18px 70px #173b2020;
 }
+.feedback-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.feedback-trigger svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.feedback-dialog {
+  width: min(560px, calc(100vw - 28px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.feedback-dialog::backdrop {
+  background: #081a1370;
+  backdrop-filter: blur(4px);
+}
+.feedback-form {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+.feedback-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.feedback-heading h2 {
+  margin: 0;
+}
+.feedback-form p {
+  margin: 0;
+}
+.feedback-form label {
+  display: grid;
+  gap: 8px;
+}
+.feedback-form input,
+.feedback-form textarea,
+.feedback-form select {
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+}
+.feedback-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.feedback-form input:not([type='file']),
+.feedback-form textarea,
+.feedback-form select,
+#profile-form input {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+.feedback-form input:focus-visible,
+.feedback-form textarea:focus-visible,
+.feedback-form select:focus-visible,
+#profile-form input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.feedback-form input::file-selector-button {
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin-right: 10px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.feedback-upload {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+}
+.feedback-upload small,
+.feedback-context {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.feedback-previews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.feedback-previews:empty {
+  display: none;
+}
+.feedback-previews > div {
+  position: relative;
+}
+.feedback-previews img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.feedback-previews button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.feedback-error {
+  color: #c0392b;
+}
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+@media (max-width: 760px) {
+  .sidebar .account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .sidebar .feedback-trigger {
+    flex: 1 0 100%;
+    min-height: 44px;
+  }
+  .feedback-form {
+    padding: 20px;
+  }
+  .feedback-actions button {
+    flex: 1;
+    min-height: 44px;
+  }
+}
 .group-danger-zone {
   margin-top: 24px;
   padding: 18px;
@@ -1231,6 +1388,26 @@ dialog > form[method='dialog'] {
 }
 .notification-unread {
   border-left: 4px solid #dc3d49;
+}
+.notification-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 12px;
+}
+.calendar-share-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+.calendar-share-link input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.calendar-share-link button {
+  flex: 0 1 auto;
 }
 .notification-unread h3::before {
   content: ' ';

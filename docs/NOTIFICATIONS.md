@@ -1,60 +1,35 @@
-# การแจ้งเตือนและแอปหน้าจอโฮม
+# Notifications and Home Screen / การแจ้งเตือนและแอปหน้าจอโฮม
 
-## Group integration update — 10 October 2026
+Updated 10 October 2026. [Current feature guide](CURRENT-FEATURES.md) · [Reminder schedule](REMINDERS.md)
 
-Calendar web/groups/invitations/mobile sidebar/shared dates are deployed on homeserver. Discord worker and private panel cutover remain pending; legacy reminders still run. Read [current Calendar status](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md).
+## Event reminders
 
-> Calendar source is deployed independently; bot worker cutover remains pending. Current status is documented in the Calendar repository.
+Web event notifications are scheduled reminders only. Event creation, approval, edit, cancellation and deletion remain in audit history and do not emit `published`, `change` or `review` notifications. The common service rejects those kinds even if a caller still invokes it. Old inbox items remain readable.
 
-## ทำงานแล้วในต้นแบบ
+Tomorrow's nonempty summary runs at 12:00 Asia/Bangkok when `notifyTomorrow` is enabled. Today's nonempty summary uses `dayTime`, default 07:00 for new preferences. Timed activities may have a lead-time reminder and a start reminder. All-day events use the daily summary, with an individual day reminder only when that summary is disabled. User categories and saved opt-outs remain effective.
 
-- กล่องแจ้งเตือนในเว็บ เก็บลงฐานข้อมูลแยกแต่ละคน
-- จำนวนที่ยังไม่อ่านเป็นสีแดงในเมนู อ่านทั้งหมดแล้วลด badge
-- สมาชิกเลือกประเภทแจ้งเตือน หมวด เวลาเตือน และเวลาเตือนกิจกรรมทั้งวัน
-- ผู้จัดการเลือกแจ้งเมื่อมี pending และเมื่อเผยแพร่อัตโนมัติ
-- Web Push subscription แยกบัญชีและอุปกรณ์ จำกัด 5 subscriptions ต่อบัญชี
-- VAPID keys สร้างใน .env ส่วนตัว ไม่เผยแพร่ private key
-- Service worker รับ push แสดง system notification และ Badging API เมื่อแพลตฟอร์มรองรับ
-- Manifest สำหรับติดตั้งเป็นแอป ไม่มีปุ่ม +แอปถาวร
+Scheduler ticks every 30 seconds. Individual due reminders accept a two-minute due window. Summaries depend on reaching their exact clock minute; the current scheduler is not an offline catch-up queue. Do not promise a reminder while the server is stopped. Deduplication keys include group/user and delivery occasion.
 
-## ลองบนเครื่อง
+## Quiet hours and unread state
 
-1. เลือกบทบาทแล้วเปิด ตั้งค่าของฉัน
-2. เปิดแจ้งเตือนบนอุปกรณ์ แล้วอนุญาตผ่าน browser
-3. ส่งแจ้งเตือนทดลอง ต้องมี subscription ที่สมัครสำเร็จก่อนจึงเห็นนอกเว็บ
-4. ดูกล่องแจ้งเตือน และอ่านทั้งหมดเพื่อเคลียร์ badge
+Inbox entries are created before quiet-hour evaluation. Quiet hours suppress device Push; they do not erase the inbox entry. Unread counts are restricted to authorized, active group memberships. Marking read updates the badge count. A supported browser/OS may reflect the unread count through Badging API, but support is not universal.
 
-Web Push มีผู้ให้บริการของ browser เป็นตัวกลาง ไม่ใช่ SMS หรืออีเมล การสมัครสำเร็จและการตอบรับจาก push provider ไม่ได้ยืนยันว่าอุปกรณ์แสดงแล้ว เช่นอุปกรณ์ offline, focus mode หรือผู้ใช้ปิดสิทธิ์ ไม่มีการยืนยันเสียงจริงหรือทดสอบบนมือถือในงานนี้
+## Device Push
 
-## มือถือ
+The authenticated device subscribes using a VAPID public key; the private key remains in the server environment. The service stores at most five subscriptions per account. Notifications require browser permission, a valid subscription, supported browser/OS and configured VAPID credentials. An expired subscription is cleaned up on delivery failure.
 
-ต้องมี URL HTTPS ที่มือถือเข้าได้ Localhost บนมือถือคือเครื่องมือถือเอง ไม่ใช่ Windows ต้นแบบ ปัจจุบัน bind 127.0.0.1 จึงทดสอบจากมือถือผ่าน Wi-Fi ไม่ได้จนจัด HTTPS/tunnel หรือ development proxy อย่างเหมาะสม
+On iPhone/iPad use Safari → Share → Add to Home Screen, then open the installed app and enable notifications where supported. Android can use the browser's native installation prompt when available, or its install menu. The sidebar can reopen the installation guide. Introductory installation advice is shown once per browser; already installed mode hides it. See [user guide](USER-GUIDE.md) and the deployed `/install.html` page.
 
-iPhone/iPad รองรับ Web Push สำหรับแอปที่เพิ่มลง Home Screen บน iOS/iPadOS 16.4+ ให้เปิดจากไอคอนแล้วกดเปิดแจ้งเตือน สิทธิ์ต้องเกิดจากการกดของผู้ใช้ Android ใช้ browser/PWA ที่รองรับได้
+## Accounts, invitations and Feedback
 
-สี รูปทรง และการแสดงเลข badge บนไอคอนถูกกำหนดโดย OS/launcher ไม่สามารถรับประกันว่าจะเป็นจุดแดงทุกเครื่อง ถ้าไม่รองรับ Badging API ยังมีจำนวนสีแดงในเว็บและ system notifications ตามความสามารถของ browser
+Ownership acceptance notices and explicit test notifications are separate from event-change notifications. Invitation mail uses the SMTP delivery queue and single-use links; it is not the scheduled event-reminder service. Feedback submission is a private multipart API and reaches the main server panel; it does not grant group administrators server access.
 
-## เวลาและขอบเขต
+## Discord integration boundary
 
-กิจกรรมทั้งวัน: ก่อนหนึ่งวัน 12:00 และวันจริงตามเวลา default 07:00 ของผู้ใช้ กิจกรรมระบุเวลา: เตือนล่วงหน้าตามที่เลือกและตอนเริ่ม เวลาใช้ Asia/Bangkok ไม่ผูก timezone ของเซิร์ฟเวอร์
+Calendar publishes protected group delivery APIs and jobs. The grouped worker requires a coordinated migration before activation; the production legacy Discord scheduler remains separate. Public website/API deployment does not enable a new Discord bot or move channels automatically. The privileged main-panel Calendar bridge and Feedback inbox are implemented.
 
-Scheduler ตรวจทุก 30 วินาที มี dedupe แต่จะไม่ไล่ส่งย้อนหลังเมื่อหยุดเซิร์ฟเวอร์นานเกินสองนาที การเปลี่ยนเวลาการแจ้งเตือนอาจสร้าง schedule ใหม่ กิจกรรม native แก้ไขได้ตามสิทธิ์ แต่ native recurrence/multi-node Web reminder leases ยังไม่มี
+## ภาษาไทย
 
-หมวดบน sidebar เป็น display preference และไม่บังคับหมวดแจ้งเตือน: ผู้ใช้เลือก notifyCategories แยกได้ Logout ผ่านเว็บถอน push ของอุปกรณ์นี้ หาก session หมดอายุแต่ยังไม่ได้ logout การสมัคร push ยังคงอยู่จนปิดแจ้งเตือน/ถอน subscription ซึ่งเป็นพฤติกรรมสำหรับรับเตือนแม้ปิดหน้าเว็บ
+เพิ่มหรือแก้กิจกรรมไม่ส่งแจ้งเตือนแล้ว แต่ยังเก็บประวัติการจัดการ ส่งเฉพาะสรุปวันพรุ่งนี้ สรุปวันนี้ และเตือนก่อนถึง/เมื่อถึงเวลากิจกรรมตามการตั้งค่า ปุ่มดูกิจกรรมในกล่องแจ้งเตือนมีระยะห่างจากวันเวลา และรายการเก่าจะยังอยู่
 
-Endpoints ของ push จำกัดไปยังผู้ให้บริการ browser ที่รู้จักและ HTTPS ไม่ให้ผู้ใช้ชี้ระบบส่งไป arbitrary/private IP ผู้ให้บริการใหม่ที่ไม่อยู่ในรายการจะถูกปฏิเสธจนผ่านการตรวจเพิ่ม
-
-## อ้างอิง
-
-- [Apple Web Push](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers)
-- [WebKit Home Screen Badging](https://webkit.org/blog/14112/badging-for-home-screen-web-apps/)
-- [MDN Badging API](https://developer.mozilla.org/en-US/docs/Web/API/Badging_API)
-
-## Shared dates and group reminders
-
-Web reminders use publishedEvents for shared dates plus group activities, querying today/tomorrow with each group's member preferences. Inbox and dedupe remain group-scoped. Discord jobs use the same reader, but production worker activation remains pending. Display categories and reminder categories are separate. See CURRENT-STATUS.md.
-
-
-## Workflow update — 10 October 2026
-
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+ช่วงเงียบหยุด Push ออกอุปกรณ์ แต่กล่องในเว็บยังบันทึกไว้ ถ้า homeserver หยุด ระบบนี้ไม่มีการส่งย้อนหลังครบทุกนาทีโดยอัตโนมัติ การแจ้งเตือนบนอุปกรณ์จริงและ badge ต้องทดสอบแยกจากการเช็ก syntax/format และยังไม่ยืนยันครบทุกแพลตฟอร์ม

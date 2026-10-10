@@ -2,9 +2,16 @@ import nodemailer from 'nodemailer';
 
 /** Optional SMTP transport. An invitation is usable even before mail is configured. */
 export async function sendInvitationEmail(invitation, groupName) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) return { status: 'not-configured' };
+  if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) {
+    return { status: 'not-configured' };
+  }
+
   const port = Number(process.env.SMTP_PORT || 465);
-  if (![465, 587].includes(port)) return { status: 'invalid-configuration' };
+
+  if (![465, 587].includes(port)) {
+    return { status: 'invalid-configuration' };
+  }
+
   const transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
@@ -16,6 +23,7 @@ export async function sendInvitationEmail(invitation, groupName) {
     connectionTimeout: 10000,
     socketTimeout: 15000,
   });
+
   try {
     const expires = new Intl.DateTimeFormat('th-TH', {
       dateStyle: 'long',
@@ -26,9 +34,13 @@ export async function sendInvitationEmail(invitation, groupName) {
       from: process.env.SMTP_FROM,
       to: invitation.email,
       subject: `คำเชิญเข้ากลุ่ม ${groupName} · Tutel Calendar`,
-      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nเข้าสู่ระบบด้วย Google หรือ Discord ที่ยืนยันอีเมลตรงกับคำเชิญ\nคำเชิญหมดอายุ ${expires} (เวลาไทย)\nหากคุณไม่รู้จักกลุ่มนี้หรือไม่ต้องการเข้าร่วม สามารถละเว้นอีเมลนี้ได้`,
+      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nกดลิงก์แล้วเข้าสู่ระบบด้วย Google หรือ Discord บัญชีใดก็ได้ และกดรับคำเชิญ\nลิงก์นี้ใช้สำเร็จได้เพียง 1 ครั้ง\nคำเชิญหมดอายุ ${expires} (เวลาไทย)\nหากคุณไม่รู้จักกลุ่มนี้หรือไม่ต้องการเข้าร่วม สามารถละเว้นอีเมลนี้ได้`,
     });
-    if (!result.accepted?.length) return { status: 'failed', reason: 'recipient-rejected' };
+
+    if (!result.accepted?.length) {
+      return { status: 'failed', reason: 'recipient-rejected' };
+    }
+
     return { status: 'sent' };
   } catch (error) {
     const reason = error.responseCode

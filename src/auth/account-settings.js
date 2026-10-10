@@ -4,17 +4,22 @@ import { member, csrf } from './oauth.js';
 import { recordAudit } from '../groups/schema.js';
 
 export function initializeAccountSettings() {
-  db.exec(`CREATE TABLE IF NOT EXISTS session_details (
-    session_hash TEXT PRIMARY KEY REFERENCES sessions(hash) ON DELETE CASCADE,
-    id TEXT NOT NULL UNIQUE, device TEXT NOT NULL, created_at TEXT NOT NULL
-  );`);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session_details ( session_hash TEXT PRIMARY KEY REFERENCES sessions(hash) ON DELETE CASCADE,
+       id TEXT NOT NULL UNIQUE,
+       device TEXT NOT NULL,
+       created_at TEXT NOT NULL );
+  `);
+
   for (const row of db
     .prepare(
       'SELECT hash FROM sessions WHERE hash NOT IN (SELECT session_hash FROM session_details)',
     )
-    .all())
+    .all()) {
     recordSession(row.hash);
+  }
 }
+
 export function recordSession(hash, agent = '') {
   const device = /iPad/i.test(agent)
     ? 'iPad'
@@ -36,7 +41,37 @@ export function recordSession(hash, agent = '') {
     new Date().toISOString(),
   );
 }
+
 export function registerAccountSettings(app) {
+  app.get('/api/account/profile', member, (req, res) =>
+    res.json({
+      name: req.session.name,
+      customName: req.session.custom_name,
+      providerName: req.session.provider_name || req.session.name,
+    }),
+  );
+
+  app.put('/api/account/profile', member, csrf, (req, res) => {
+    if (typeof req.body.name !== 'string') {
+      return res.status(400).json({ error: 'ชื่อที่แสดงไม่ถูกต้อง' });
+    }
+
+    const name = req.body.name.trim().normalize('NFC');
+
+    if ([...name].length > 100 || /[\p{Cc}\p{Cf}]/u.test(name)) {
+      return res.status(400).json({ error: 'ใช้ชื่อไม่เกิน 100 ตัวอักษร โดยไม่มีอักขระควบคุม' });
+    }
+
+    const effective = name || req.session.provider_name || req.session.name;
+    db.prepare('UPDATE users SET custom_name=?,name=? WHERE id=?').run(
+      name || null,
+      effective,
+      req.session.id,
+    );
+    recordAudit(db, req.session.id, 'account.display-name-updated', req.session.id);
+    res.json({ name: effective, customName: name || null });
+  });
+
   app.get('/api/accounts', member, (req, res) =>
     res.json(
       db
@@ -46,23 +81,31 @@ export function registerAccountSettings(app) {
         .all(req.session.id),
     ),
   );
+
   app.delete('/api/accounts/:provider', member, csrf, (req, res) => {
     const identities = db.prepare('SELECT * FROM identities WHERE user_id=?').all(req.session.id);
     const remaining = identities.filter((i) => i.provider !== req.params.provider);
-    if (!remaining.length || remaining.length === identities.length)
+
+    if (!remaining.length || remaining.length === identities.length) {
       return res.status(409).json({ error: 'ต้องเหลือบัญชีสำหรับเข้าสู่ระบบอย่างน้อยหนึ่งบัญชี' });
+    }
+
     db.exec('BEGIN IMMEDIATE');
+
     try {
       db.prepare('DELETE FROM identities WHERE user_id=? AND provider=?').run(
         req.session.id,
         req.params.provider,
       );
-      if (req.session.provider === req.params.provider)
+
+      if (req.session.provider === req.params.provider) {
         db.prepare('UPDATE users SET provider=?,subject=? WHERE id=?').run(
           remaining[0].provider,
           remaining[0].subject,
           req.session.id,
         );
+      }
+
       db.prepare('DELETE FROM sessions WHERE user_id=? AND hash<>?').run(
         req.session.id,
         req.session.hash,
@@ -75,27 +118,47 @@ export function registerAccountSettings(app) {
       throw error;
     }
   });
+
   app.get('/api/account/sessions', member, (req, res) =>
     res.json(
       db
         .prepare(
-          `SELECT d.id,d.device,d.created_at,s.expires_at,s.hash=? AS current FROM sessions s JOIN session_details d ON d.session_hash=s.hash
-    WHERE s.user_id=? AND s.expires_at>? ORDER BY d.created_at DESC`,
+          `
+            SELECT d.id,
+               d.device,
+               d.created_at,
+               s.expires_at,
+               s.hash=? AS current
+            FROM sessions s
+            JOIN session_details d ON d.session_hash=s.hash
+            WHERE s.user_id=? AND s.expires_at>?
+            ORDER BY d.created_at DESC
+          `,
         )
         .all(req.session.hash, req.session.id, Date.now()),
     ),
   );
+
   app.delete('/api/account/sessions/:id', member, csrf, (req, res) => {
     const target = db
       .prepare(
-        'SELECT s.hash FROM sessions s JOIN session_details d ON d.session_hash=s.hash WHERE s.user_id=? AND d.id=?',
+        `
+          SELECT s.hash
+          FROM sessions s
+          JOIN session_details d ON d.session_hash=s.hash
+          WHERE s.user_id=? AND d.id=?
+        `,
       )
       .get(req.session.id, req.params.id);
-    if (!target || target.hash === req.session.hash)
+
+    if (!target || target.hash === req.session.hash) {
       return res.status(409).json({ error: 'ใช้ปุ่มออกจากระบบสำหรับอุปกรณ์ปัจจุบัน' });
+    }
+
     db.prepare('DELETE FROM sessions WHERE hash=?').run(target.hash);
     res.json({ ok: true });
   });
+
   app.post('/api/account/logout-others', member, csrf, (req, res) => {
     db.prepare('DELETE FROM sessions WHERE user_id=? AND hash<>?').run(
       req.session.id,

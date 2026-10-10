@@ -1,5 +1,11 @@
 # คู่มือผู้ใช้ Tutel Calendar
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
+
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 [English](USER-GUIDE.md) · [สถานะจริง](CURRENT-STATUS.md)
 
 ## สารบัญ
@@ -22,7 +28,7 @@
 
 ทุกกลุ่มรวมวันทั่วไปจากข้อมูลชุดกลาง ไม่สร้างสำเนาเมื่อสร้างกลุ่ม ค่าเริ่มต้นมีการศึกษา กิจกรรม/ชุมชน วันสำคัญและวันหยุด หมวดอื่นเลือกเพิ่มได้ เช่นวันหยุดราชการ ชดเชย ธนาคาร พุทธ วันพระ สถาบันพระมหากษัตริย์ ประเพณี ไทย สากล และมุสลิม การมีหมวดไม่ได้แปลว่ามีข้อมูลวันครบจากต้นทาง
 
-สมาชิกบันทึกหมวดแสดงผลแยกกลุ่มในฐานข้อมูล ผู้ชมเก็บใน browser storage ธีมเก็บในเครื่องนั้น ตอนนี้แสดงกลุ่มที่เลือกพร้อมวันกลาง การแสดงหลายกลุ่มพร้อมกันยังเป็นงานค้าง
+สมาชิกบันทึกหมวดแสดงผลแยกกลุ่มในฐานข้อมูล ผู้ชมเก็บใน browser storage ธีมเก็บในเครื่องนั้น ตอนนี้แสดงกลุ่มที่เลือกพร้อมวันกลาง เลือกแสดงหลายกลุ่มที่มีสิทธิ์อ่านพร้อมกันได้จากการตั้งค่ามุมมอง โดยค่าเริ่มต้นเลือกเฉพาะกลุ่มปัจจุบัน
 
 ## 3. กลุ่มและสิทธิ์
 
@@ -36,7 +42,7 @@
 - อีเมล: ใส่ผู้รับ สิทธิ์ อายุ แล้วกดส่งได้เลย ไม่มี checkbox ซ้ำ หากส่งไม่สำเร็จระบบเก็บลิงก์ไว้และบอกข้อผิดพลาด
 - รหัส: สร้างแล้วคัดลอกให้ผู้รับ
 
-อีเมลต้องตรงกับอีเมลที่ provider ยืนยันเมื่อเข้าสู่ระบบ คำเชิญไม่สร้างบัญชีปลอม CSV ที่ยืนยันแล้วสร้างคำเชิญและเข้าคิวส่งอีเมลทีละคน ไม่เปลี่ยนสิทธิ์เดิมและไม่ปลดระงับเอง ดูประวัติหรือเพิกถอนคำเชิญที่ยังไม่ใช้ได้
+ผู้รับลิงก์เข้าสู่ระบบด้วย Google หรือ Discord บัญชีใดก็ได้แล้วกดรับคำเชิญ ลิงก์อีเมลใช้สำเร็จได้ครั้งเดียว ไม่ต้องมีอีเมลตรงกับปลายทาง คำเชิญไม่สร้างบัญชีปลอม CSV ที่ยืนยันแล้วสร้างคำเชิญและเข้าคิวส่งอีเมลทีละคน ไม่เปลี่ยนสิทธิ์เดิมและไม่ปลดระงับเอง ดูประวัติหรือเพิกถอนคำเชิญที่ยังไม่ใช้ได้
 
 ## 5. กิจกรรมและการอนุมัติ
 
@@ -134,3 +140,7 @@ The default public view has no selected group and shows “ยังไม่ม
 ## ประวัติและรายชื่อสมาชิก (10 ตุลาคม 2026)
 
 สมาชิกทุก role อ่านรายชื่อ สิทธิ์ และเวลาที่เข้าร่วมกลุ่มเดียวกันได้ พร้อมหน้าประวัติแบ่งหน้า แสดงว่าใครทำอะไรกับรายการไหน เวลาไทย ปุ่มจัดการยังจำกัด role บันทึกใหม่เก็บชื่อสำรองหลังลบรายการ ไม่สร้างประวัติเก่าย้อนหลัง ไม่แสดงอีเมลหรือ token คำเชิญ ดู [คู่มือประวัติกลุ่ม](GROUP-HISTORY.th.md) สำหรับ API โครงสร้างและข้อจำกัด ต้องเริ่มเซิร์ฟเวอร์ใหม่เมื่อ deploy โค้ดรุ่นนี้
+
+## Current source and learning material / โค้ดและสื่อเรียนรู้ปัจจุบัน
+
+The repository conventions are documented in [CODE-STYLE.md](CODE-STYLE.md). The independent Learning Lab is at D:/Tutel-Learning-Lab, contains current snapshots of both repositories, and is not deployed or published with either project. Earlier architecture examples are explicitly identified as historical; current feature explanations take precedence.

@@ -19,7 +19,7 @@ Shared general dates must remain one dataset. User-added holiday-category activi
 
 ## Verification / ตรวจงาน
 
-Calendar currently has no automated test suite. Follow DEVELOPMENT.md's syntax/format and manual acceptance guidance when verification is requested. Use an isolated database and mock/injected network services for future tests. Record what was actually checked; health/format success is not proof of group isolation, mail delivery or OAuth correctness.
+Calendar includes an isolated group-history test file, but no complete application test suite or npm test script. Follow DEVELOPMENT.md's syntax/format and manual acceptance guidance when verification is requested. Use an isolated database and mock/injected network services for future tests. Record what was actually checked; health/format success is not proof of group isolation, mail delivery or OAuth correctness.
 
 ## Review and commit / ตรวจและ commit
 
@@ -42,3 +42,7 @@ Do not commit .env, OAuth/SMTP/service/tunnel keys, SQLite/WAL, sessions, subscr
 Update CURRENT-STATUS.md only with observed deployment facts. Preserve production .env/data and make a consistent SQLite backup before restart/migration. Version cached UI assets together. Do not send test invitations to real people without authorization. Calendar source publication does not activate the Discord worker or website failover.
 
 ภาษาไทย: PR ต้องบอกสิทธิ์ที่เปลี่ยนและแผนย้อนกลับ ชุดข้อมูลวันกลางไม่ clone การเพิ่ม test ต้องไม่ยิง production service และไม่รายงานงานค้างว่าเสร็จเพียงเพราะขึ้น Git แล้ว
+
+## Readability / การจัดโค้ด
+
+Follow [CODE-STYLE.md](docs/CODE-STYLE.md) for JavaScript blocks, embedded HTML, safe SQL formatting and logical paragraphs. The project-wide cleanup was explicitly requested; future changes should format only their relevant files.

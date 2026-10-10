@@ -7,6 +7,7 @@ data/
 .env.*
 !.env.example
 private/
+feedback-uploads/
 backups/
 *.sqlite*
 *.db*

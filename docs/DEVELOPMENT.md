@@ -1,5 +1,11 @@
 # Developer handbook: Tutel Calendar
 
+[Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
+
+## Invitation/account update — 10 October 2026
+
+Email/link invitations now accept any signed-in Google/Discord account, require explicit acceptance and allow one successful use. Automatic email-matched joining has been removed. Users can set a persistent display name; managers additionally see the original provider name and verified email. See [current behavior and API](INVITATIONS-AND-PROFILE.md). This replaces older descriptions of preassignment and email-matching below.
+
 [ภาษาไทย](DEVELOPMENT.th.md) · [Contribution workflow](../CONTRIBUTING.md) · [Current deployment](CURRENT-STATUS.md)
 
 Updated 10 October 2026. For runtime status, CURRENT-STATUS.md is authoritative. This guide explains how to develop and hand over the source; it does not claim that pending bot cutover or delivery tests have been completed.
@@ -76,7 +82,7 @@ Production-like local OAuth requires a trusted HTTPS URL, ENABLE_DEMO=0, matchin
 
 `npm start` starts services. `npm run format` writes formatting; `npm run format:check` checks it. `node scripts/generate-vapid.js` generates and appends Push keys privately to .env without printing the secrets. Keep that file outside Git. Do not rotate existing VAPID keys casually; existing subscriptions can depend on them.
 
-Express supplies routing/middleware; Helmet adds response security headers/CSP. dotenv loads environment. Node's DatabaseSync supplies SQLite. nodemailer sends SMTP; web-push sends encrypted browser Push messages. Browser UI uses native modules/DOM/CSS; there is no React build or bundler requirement. Prettier changes formatting, not application behavior. Installed versions belong in the dependency lockfile.
+Express supplies routing/middleware; Helmet adds response security headers/CSP. dotenv loads environment. Node's DatabaseSync supplies SQLite. nodemailer sends SMTP; web-push sends encrypted browser Push messages. Multer parses bounded multipart uploads; Sharp validates, resizes and re-encodes Feedback images. Browser UI uses native modules/DOM/CSS; there is no React build or bundler requirement. Prettier changes formatting, not application behavior. Installed versions belong in the dependency lockfile.
 
 ## 4. Trace a request and event
 
@@ -161,7 +167,7 @@ Current integration is still one-way legacy snapshot import. Native web activiti
 
 ## 9. Verification and troubleshooting
 
-There is **no automated test suite or npm test script in this repository yet**. Do not report format checking or service health as full behavior verification. The commands/checklist below are for a developer to run when verification is requested; they were not run just to write this guide.
+The repository contains `tests/group-history.test.js`, an isolated Node test file, but has no npm test script. It is not a complete application test suite. Do not report format checking or service health as full behavior verification. The commands/checklist below are for a developer to run when verification is requested; they were not run just to write this guide.
 
 ```powershell
 npm run format:check
@@ -204,7 +210,7 @@ Rollback the application independently from the database. An additive schema sho
 
 **Handover checklist:** repo/revision, Node version, service/tunnel ownership, secret access outside Git, OAuth callback/audience, bootstrap admin subjects, SQLite backup/restore plan, legacy importer source and deletion policy, SMTP sender/key lifetime, Push key lifecycle, group roles/bindings and pending worker activation. Keep a record of which behaviors were actually exercised.
 
-**Known pending work:** multi-group display; explicit Discord-link activity visibility; production Discord worker/private-panel cutover; separately running Calendar Discord bot; native recurrence; multi-host Web reminder coordination; automated tests; verified email/Push delivery; website failover. These are engineering tasks, not completed features. See CURRENT-STATUS.md and the bot's development guide before changing shared contracts.
+**Known pending work:** grouped Discord worker cutover and channel migration; a separately running Calendar Discord client; multi-host web reminder coordination; comprehensive automated/browser/device tests; website failover and complete physical-device Push verification. Authorized multi-group display, bounded recurrence, group view links and the private-panel bridge are implemented. See CURRENT-STATUS.md.
 
 ## Mobile installation (10 October 2026)
 
@@ -216,8 +222,12 @@ Owner-only deletion, exact-name confirmation and 30-day recovery are implemented
 
 ## Workflow update — 10 October 2026
 
-See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; no Git push is part of this update.
+See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษาไทย](WORKFLOWS.th.md). These replace earlier descriptions of immediate ordinary owner transfer, hard activity deletion and single-group-only display. Grouped Discord worker cutover remains pending; Source publication and runtime deployment are separate operations.
 
 ## Group history and directory (10 October 2026)
 
-All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. These source changes require a server restart when deployed.
+All authorized group members can read member names, group roles and join timestamps, and a paginated activity history with actor names, item titles and Bangkok timestamps. Management writes remain restricted. New audit snapshots preserve readable names after item deletion; old actions are not reconstructed. No invitation tokens or email addresses are exposed. See [Group history and directory](GROUP-HISTORY.md) for API changes, implementation and retention limitations. Server source changes require a restart as part of deployment.
+
+## Source readability / รูปแบบโค้ดปัจจุบัน
+
+See [the repository conventions](CODE-STYLE.md): explicit control-flow braces, one declaration per statement, paragraphs by responsibility, formatted embedded HTML and multiline SQL with bound parameters.

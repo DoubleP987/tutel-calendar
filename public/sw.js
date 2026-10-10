@@ -1,6 +1,8 @@
 // Network-first shell: never cache authenticated API responses or private data.
 self.addEventListener('install', () => self.skipWaiting());
+
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {};
   event.waitUntil(
@@ -18,10 +20,15 @@ self.addEventListener('push', (event) => {
     ]),
   );
 });
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = new URL(event.notification.data?.url || '/', self.location.origin);
-  if (url.origin !== self.location.origin) return;
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(async (clients) => {
       for (const client of clients) {
@@ -29,6 +36,7 @@ self.addEventListener('notificationclick', (event) => {
         await client.focus();
         return;
       }
+
       return self.clients.openWindow(url.href);
     }),
   );
