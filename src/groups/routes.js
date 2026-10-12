@@ -331,7 +331,7 @@ export function registerGroups(app) {
                    d.updated_at AS delivery_updated
                 FROM invitations i
                 LEFT JOIN invitation_delivery d ON d.invitation_id=i.id
-                WHERE i.group_id=? AND i.email=? AND i.revoked=0 AND i.expires_at>? AND i.uses<i.max_uses
+                WHERE i.group_id=? AND i.email=? AND i.revoked=0 AND (i.expires_at=0 OR i.expires_at>?) AND i.uses<i.max_uses
               `,
             )
             .get(req.group.id, row.email, Date.now());
@@ -412,7 +412,7 @@ export function registerGroups(app) {
         !invite ||
         invite.kind !== 'email' ||
         invite.revoked ||
-        invite.expires_at <= Date.now() ||
+        (invite.expires_at !== 0 && invite.expires_at <= Date.now()) ||
         invite.uses >= invite.max_uses
       ) {
         return res.status(400).json({ error: 'คำเชิญนี้ส่งซ้ำไม่ได้ กรุณาสร้างคำเชิญใหม่' });

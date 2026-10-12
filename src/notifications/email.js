@@ -25,16 +25,19 @@ export async function sendInvitationEmail(invitation, groupName) {
   });
 
   try {
-    const expires = new Intl.DateTimeFormat('th-TH', {
-      dateStyle: 'long',
-      timeStyle: 'short',
-      timeZone: 'Asia/Bangkok',
-    }).format(new Date(invitation.expiresAt));
+    const expires =
+      invitation.expiresAt === 0
+        ? null
+        : new Intl.DateTimeFormat('th-TH', {
+            dateStyle: 'long',
+            timeStyle: 'short',
+            timeZone: 'Asia/Bangkok',
+          }).format(new Date(invitation.expiresAt));
     const result = await transport.sendMail({
       from: process.env.SMTP_FROM,
       to: invitation.email,
       subject: `คำเชิญเข้ากลุ่ม ${groupName} · Tutel Calendar`,
-      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nกดลิงก์แล้วเข้าสู่ระบบด้วย Google หรือ Discord บัญชีใดก็ได้ และกดรับคำเชิญ\nลิงก์นี้ใช้สำเร็จได้เพียง 1 ครั้ง\nคำเชิญหมดอายุ ${expires} (เวลาไทย)\nหากคุณไม่รู้จักกลุ่มนี้หรือไม่ต้องการเข้าร่วม สามารถละเว้นอีเมลนี้ได้`,
+      text: `คุณได้รับคำเชิญเข้ากลุ่ม ${groupName}\n\n${invitation.url}\n\nกดลิงก์แล้วเข้าสู่ระบบด้วย Google หรือ Discord บัญชีใดก็ได้ และกดรับคำเชิญ\nลิงก์นี้ใช้สำเร็จได้เพียง 1 ครั้ง\n${expires ? `คำเชิญหมดอายุ ${expires} (เวลาไทย)` : 'คำเชิญนี้ไม่มีวันหมดอายุจนกว่าจะใช้ครบหรือถูกยกเลิก'}\nหากคุณไม่รู้จักกลุ่มนี้หรือไม่ต้องการเข้าร่วม สามารถละเว้นอีเมลนี้ได้`,
     });
 
     if (!result.accepted?.length) {

@@ -29,6 +29,7 @@ const actions = {
   'event.submit': 'ส่งกิจกรรมให้ตรวจอนุมัติ',
   'event.cancelOccurrence': 'ยกเลิกกิจกรรมเฉพาะครั้ง',
   'event.editOccurrence': 'แก้ไขกิจกรรมเฉพาะครั้ง',
+  'invitation.expiry-unlimited': 'ปรับคำเชิญเป็นไม่มีวันหมดอายุ',
   'invitation.created': 'สร้างคำเชิญ',
   'invitation.accepted': 'รับคำเชิญ',
   'invitation.resent': 'ส่งคำเชิญอีกครั้ง',

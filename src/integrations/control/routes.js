@@ -316,7 +316,7 @@ export function registerControlIntegration(app) {
               `
                 SELECT id
                 FROM invitations
-                WHERE group_id=? AND email=? AND revoked=0 AND expires_at>? AND uses<max_uses
+                WHERE group_id=? AND email=? AND revoked=0 AND (expires_at=0 OR expires_at>?) AND uses<max_uses
               `,
             )
             .get(req.params.id, row.email, Date.now())

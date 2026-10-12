@@ -55,7 +55,7 @@ export function startInvitationDelivery() {
              url=NULL
           WHERE state='queued' AND invitation_id IN (SELECT id
           FROM invitations
-          WHERE revoked=1 OR expires_at<=? OR uses>=max_uses)
+          WHERE revoked=1 OR (expires_at<>0 AND expires_at<=?) OR uses>=max_uses)
         `,
       ).run(Date.now());
       const item = db

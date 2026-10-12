@@ -1,5 +1,5 @@
-import { groupsUI } from './groups.js?v=20261012-capabilities';
-import { settingsUI } from './settings.js?v=20261012-announcements';
+import { groupsUI } from './groups.js?v=20261012-invites-capabilities';
+import { settingsUI } from './settings.js?v=20261012-invites-announcements';
 import { setupInstallation } from './install.js?v=20261010-install';
 import { setupFeedback } from './feedback.js?v=20261010-feedback-close';
 

@@ -16,7 +16,7 @@ export function createInvitation(groupId, actor, input, actorRole = 'manager') {
   if (
     db
       .prepare(
-        'SELECT count(*) n FROM invitations WHERE group_id=? AND revoked=0 AND expires_at>? AND uses<max_uses',
+        'SELECT count(*) n FROM invitations WHERE group_id=? AND revoked=0 AND (expires_at=0 OR expires_at>?) AND uses<max_uses',
       )
       .get(groupId, Date.now()).n >= 1000
   ) {
@@ -43,12 +43,13 @@ export function createInvitation(groupId, actor, input, actorRole = 'manager') {
     throw new Error('อีเมลไม่ถูกต้อง');
   }
 
-  const days = Number(input.days ?? 7);
+  // Zero is the explicit no-expiration sentinel; omitted duration defaults to it.
+  const days = Number(input.days ?? 0);
   const maxUses = Number(input.maxUses ?? 1);
 
   if (
     !Number.isInteger(days) ||
-    days < 1 ||
+    days < 0 ||
     days > 30 ||
     !Number.isInteger(maxUses) ||
     maxUses < 1 ||
@@ -64,7 +65,7 @@ export function createInvitation(groupId, actor, input, actorRole = 'manager') {
         `
           SELECT id
           FROM invitations
-          WHERE group_id=? AND email=? AND revoked=0 AND expires_at>? AND uses<max_uses
+          WHERE group_id=? AND email=? AND revoked=0 AND (expires_at=0 OR expires_at>?) AND uses<max_uses
         `,
       )
       .get(groupId, email, Date.now())
@@ -78,7 +79,7 @@ export function createInvitation(groupId, actor, input, actorRole = 'manager') {
       : randomBytes(32).toString('base64url');
   const id = randomUUID();
   const now = new Date().toISOString();
-  const expiresAt = Date.now() + days * 86400000;
+  const expiresAt = days === 0 ? 0 : Date.now() + days * 86400000;
   db.prepare(`INSERT INTO invitations VALUES (?,?,?,?,?,?,?,?,?,0,0,?,?)`).run(
     id,
     groupId,
@@ -115,7 +116,7 @@ export function acceptInvitation(invitation, user) {
              g.suspended
           FROM invitations i
           JOIN groups g ON g.id=i.group_id
-          WHERE i.id=? AND i.revoked=0 AND i.expires_at>? AND i.uses<i.max_uses
+          WHERE i.id=? AND i.revoked=0 AND (i.expires_at=0 OR i.expires_at>?) AND i.uses<i.max_uses
         `,
       )
       .get(invitation.id, Date.now());

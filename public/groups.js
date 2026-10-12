@@ -1,4 +1,4 @@
-import { manageCapabilities } from './group-notices.js?v=20261012';
+import { manageCapabilities } from './group-notices.js?v=20261012-invites';
 import { workspaceUI } from './workspace.js?v=20261010-workflows';
 import { renderGroupHistory } from './history.js?v=20261010-history';
 
@@ -299,9 +299,19 @@ export function groupsUI({ api, state, element, toast, reload, editEvent }) {
     const options = element('details', 'invite-options');
     options.append(element('summary', '', 'อายุคำเชิญและจำนวนผู้เข้าร่วม'));
     node.append(options);
-    const days = field(options, 'ใช้ได้กี่วัน', 'days', 'number', '7');
-    days.min = 1;
-    days.max = 30;
+    select(
+      options,
+      'อายุคำเชิญ',
+      'days',
+      [
+        ['0', 'ไม่มีวันหมดอายุ'],
+        ['1', '1 วัน'],
+        ['7', '7 วัน'],
+        ['14', '14 วัน'],
+        ['30', '30 วัน'],
+      ],
+      '0',
+    );
     const uses = field(options, 'จำนวนผู้เข้าร่วมสูงสุด', 'maxUses', 'number', '1');
     uses.min = 1;
     uses.max = 500;
@@ -336,7 +346,7 @@ export function groupsUI({ api, state, element, toast, reload, editEvent }) {
 
     for (const invite of items) {
       const card = element('article', 'proposal');
-      const expired = invite.expires_at <= Date.now();
+      const expired = invite.expires_at !== 0 && invite.expires_at <= Date.now();
       const used = invite.uses >= invite.max_uses;
       const ended = invite.revoked || expired || used;
       const status = invite.revoked
@@ -357,7 +367,9 @@ export function groupsUI({ api, state, element, toast, reload, editEvent }) {
         element(
           'p',
           'fine',
-          `หมดอายุ ${new Date(invite.expires_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`,
+          invite.expires_at === 0
+            ? 'ไม่มีวันหมดอายุ'
+            : `หมดอายุ ${new Date(invite.expires_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}`,
         ),
       );
 

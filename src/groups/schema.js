@@ -153,6 +153,41 @@ export function initializeGroups(db) {
        expires_at);
   `);
 
+  // One-time upgrade requested for existing unused seven-day invitations.
+  // Preserve token hashes and delivery state: original links work without another email.
+  const invitationMigration = 'invitations-seven-day-unlimited-v1';
+  if (!db.prepare('SELECT key FROM settings WHERE key=?').get(invitationMigration)) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const previous = db
+        .prepare(
+          `
+        SELECT id, group_id, expires_at, created_at
+        FROM invitations
+        WHERE revoked=0 AND uses<max_uses AND expires_at>0
+      `,
+        )
+        .all();
+      let converted = 0;
+      for (const invite of previous) {
+        const lifetime = invite.expires_at - Date.parse(invite.created_at);
+        // Creation records ISO time immediately before calculating expiry.
+        if (Math.abs(lifetime - 7 * 86400000) > 2000) continue;
+        db.prepare('UPDATE invitations SET expires_at=0 WHERE id=?').run(invite.id);
+        recordAudit(db, 'system', 'invitation.expiry-unlimited', invite.id, invite.group_id);
+        converted++;
+      }
+      db.prepare('INSERT INTO settings(key,value) VALUES (?,?)').run(
+        invitationMigration,
+        JSON.stringify({ converted, at: new Date().toISOString() }),
+      );
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
   const add = (table, name, type) => {
     if (
       !db
