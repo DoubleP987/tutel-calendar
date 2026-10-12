@@ -187,16 +187,16 @@ Manual checklist บน demo DB แยก:
 
 Test ในอนาคตใช้ temporary DB และ inject clock/network/mail/Push โค้ดปัจจุบัน import อาจเปิด DB จริง ต้องแยก composition ก่อน ห้าม test ติดต่อ production services โดยเผลอ
 
-| อาการ                         | จุดตรวจ                                      |
-| ----------------------------- | -------------------------------------------- |
-| HTTP startup ไม่ได้           | real OAuth ต้อง HTTPS หรือใช้ demo loopback  |
-| Callback fail                 | scheme/host/port/path/state/client           |
-| กลุ่มว่าง                     | group/filter/status/import/shared reader     |
-| 401/403                       | session/member/blocked/suspended/CSRF/origin |
-| เมลไม่ส่ง                     | SMTP/provider result/link fallback           |
-| Preferences หาย               | membership vs guest storage/group/save       |
-| UI เก่า                       | asset query/cache/service worker             |
-| Native event ไม่เตือน Discord | cutover ยังไม่เปิด ไม่ใช่ bug UI อย่างเดียว  |
+| อาการ                         | จุดตรวจ                                        |
+| ----------------------------- | ---------------------------------------------- |
+| HTTP startup ไม่ได้           | real OAuth ต้อง HTTPS หรือใช้ demo loopback    |
+| Callback fail                 | scheme/host/port/path/state/client             |
+| กลุ่มว่าง                     | group/filter/status/import/shared reader       |
+| 401/403                       | session/member/blocked/suspended/CSRF/origin   |
+| เมลไม่ส่ง                     | SMTP/provider result/link fallback             |
+| Preferences หาย               | membership vs guest storage/group/save         |
+| UI เก่า                       | asset query/cache/service worker               |
+| Native event ไม่เตือน Discord | ตรวจว่า connect ลิงก์กลุ่มและเปิด binding แล้ว |
 
 /api/health บอก liveness ไม่ใช่ทุกฟีเจอร์ Log: journalctl --user -u tutel-calendar.service -f ใช้ error ล้างข้อมูลลับ ไม่ dump env/session/bearer
 

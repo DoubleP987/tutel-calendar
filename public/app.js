@@ -1,5 +1,5 @@
-import { groupsUI } from './groups.js?v=20261010-share-everyone';
-import { settingsUI } from './settings.js?v=20261010-notification-layout';
+import { groupsUI } from './groups.js?v=20261012-capabilities';
+import { settingsUI } from './settings.js?v=20261012-announcements';
 import { setupInstallation } from './install.js?v=20261010-install';
 import { setupFeedback } from './feedback.js?v=20261010-feedback-close';
 
@@ -285,6 +285,33 @@ function detail(event) {
     edit.onclick = () => editEvent(event);
 
     root.append(edit);
+  }
+
+  if (event.can_delete && event.group_id === state.groupId) {
+    const remove = element('button', 'danger', 'ลบกิจกรรม');
+
+    remove.onclick = async () => {
+      if (!confirm(`ย้าย “${event.title}” ไปถังขยะ 30 วัน?`)) {
+        return;
+      }
+
+      remove.disabled = true;
+
+      try {
+        await api(`/api/events/${encodeURIComponent(event.series_id || event.id)}`, {
+          method: 'DELETE',
+        });
+        $('#detail-dialog').close();
+        await reload();
+        toast('ย้ายกิจกรรมเข้าถังขยะแล้ว');
+      } catch (error) {
+        toast(error.message);
+      } finally {
+        remove.disabled = false;
+      }
+    };
+
+    root.append(remove);
   }
 
   if (event.group_name) {
@@ -971,7 +998,7 @@ async function reload() {
   $('#feedback-open').hidden = !user;
   $('#user-chip').hidden = !user;
   $('#user-chip').textContent = user
-    ? `${user.name} · ${user.role === 'manager' ? 'ผู้จัดการ' : 'สมาชิก'}`
+    ? `${user.name} · ${{ owner: 'เจ้าของ', manager: 'ผู้จัดการ', editor: 'ผู้แก้ไข', member: 'สมาชิก' }[state.group?.role] || (state.group?.externalAssistant ? 'ผู้ช่วยภายนอก' : 'ยังไม่ได้เข้ากลุ่ม')}`
     : '';
   $('#review-nav').hidden = user?.role !== 'manager';
 

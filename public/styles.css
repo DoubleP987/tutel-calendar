@@ -1860,3 +1860,34 @@ dialog > form[method='dialog'] {
   gap: 0.75rem;
   margin-block-start: 1.5rem;
 }
+
+.announcement-dialog {
+  width: min(620px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+}
+.announcement-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.announcement-preview {
+  display: grid;
+  gap: 10px;
+}
+.push-intro {
+  position: fixed;
+  z-index: 15;
+  bottom: 18px;
+  right: 18px;
+  width: min(380px, calc(100vw - 36px));
+  background: var(--surface, #1b241f);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 35px #0003;
+}
+.push-intro button {
+  margin: 8px 8px 0 0;
+}
+.announcement-actions {
+  margin: 0 0 18px;
+}

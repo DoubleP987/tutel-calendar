@@ -44,6 +44,15 @@ export function trashGroup(group, actor) {
            'claimed')
       `,
     ).run(new Date(now).toISOString(), group.id);
+    db.prepare(
+      `
+        UPDATE announcement_delivery
+        SET state='skipped'
+        WHERE announcement_id IN (SELECT id
+        FROM group_announcements
+        WHERE group_id=?) AND state='pending'
+      `,
+    ).run(group.id);
     recordAudit(db, actor, 'group.trashed', group.id, group.id);
     db.exec('COMMIT');
     return { purgeAfter: now + retentionMs };
@@ -88,7 +97,20 @@ export function purgeExpiredGroups() {
         'DELETE FROM invitation_delivery WHERE invitation_id IN (SELECT id FROM invitations WHERE group_id=?)',
       ).run(item.group_id);
 
+      db.prepare(
+        `
+          DELETE
+          FROM announcement_delivery
+          WHERE announcement_id IN (SELECT id
+          FROM group_announcements
+          WHERE group_id=?)
+        `,
+      ).run(item.group_id);
+
       for (const table of [
+        'group_announcements',
+        'group_external_access',
+        'group_announcement_managers',
         'ownership_requests',
         'membership_exits',
         'notification_jobs',

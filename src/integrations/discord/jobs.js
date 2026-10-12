@@ -186,6 +186,13 @@ export function registerDiscordWorker(app) {
   });
 
   app.post('/internal/v1/bot/claim', auth, (req, res) => {
+    if (
+      process.env.CALENDAR_DISCORD_TOKEN?.trim() &&
+      req.get('x-calendar-transport') !== 'standalone'
+    ) {
+      return res.json({ jobs: [] });
+    }
+
     const guilds = req.body.guildIds;
 
     if (

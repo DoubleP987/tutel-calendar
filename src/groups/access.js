@@ -1,5 +1,6 @@
 import { db } from '../database/connection.js';
 import { legacyGroupId } from './schema.js';
+import { externalAccess } from './capabilities.js';
 
 export const managedRoles = new Set(['owner', 'manager']);
 export const roles = ['owner', 'manager', 'editor', 'member'];
@@ -42,6 +43,7 @@ export function groupContext(req, res, next) {
 
   req.group = group;
   req.membership = membership && !membership.blocked ? membership : null;
+  req.externalAccess = !membership && externalAccess(group.id, req.session?.id);
 
   if (req.session?.platform_admin) {
     req.membership ||= { role: 'manager', auto_approve: 0, preferences: '{}' };
@@ -51,7 +53,7 @@ export function groupContext(req, res, next) {
 }
 
 export function readGroup(req, res, next) {
-  if (!req.membership && req.group.visibility !== 'public') {
+  if (!req.membership && !req.externalAccess && req.group.visibility !== 'public') {
     return res
       .status(req.session ? 403 : 401)
       .json({ error: 'ต้องได้รับคำเชิญเพื่อเข้าถึงกลุ่มนี้' });

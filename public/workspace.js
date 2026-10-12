@@ -244,7 +244,9 @@ export function workspaceUI({ api, state, element, toast, reload, open, button, 
         }
       }
 
-      controls.append(button('ย้ายเข้าถังขยะ', () => action(event, 'trash'), 'danger'));
+      if (!event.can_delete) {
+        controls.append(button('ย้ายเข้าถังขยะ', () => action(event, 'trash'), 'danger'));
+      }
     } else if (
       event.lifecycle === 'trash' &&
       (event.owner_id === state.session.user.id || ['owner', 'manager'].includes(role))

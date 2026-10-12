@@ -6,6 +6,7 @@ import { categories } from './categories.js';
 import { calendarSettings, preferences } from '../members/preferences.js';
 import { notify, published } from '../notifications/service.js';
 import { groupContext, readGroup, requireGroupMember } from '../groups/access.js';
+import { mayDeleteEvent } from '../groups/capabilities.js';
 import { recordAudit } from '../groups/schema.js';
 import { recurrenceRule, notifyEventChange } from './workflow.js';
 
@@ -128,10 +129,21 @@ export function registerEvents(app) {
 
       for (const { owner_id, reviewed_by, review_note, ...event } of publishedEvents(id, {
         includeGroup:
-          id === req.group.id ? Boolean(req.membership) || req.group.visibility === 'public' : true,
+          id === req.group.id
+            ? Boolean(req.membership) || req.externalAccess || req.group.visibility === 'public'
+            : true,
       })) {
         combined.set(event.id, {
           ...event,
+          can_delete: mayDeleteEvent(
+            {
+              ...req,
+              group: { id },
+              membership: membership || (id === req.group.id ? req.membership : null),
+              externalAccess: id === req.group.id && req.externalAccess,
+            },
+            { ...event, owner_id },
+          ),
           can_edit: Boolean(
             req.session &&
             (membership || (id === req.group.id && req.membership)) &&
@@ -427,7 +439,7 @@ export function registerEvents(app) {
     }
   });
 
-  app.delete('/api/events/:id', member, csrf, groupContext, requireGroupMember, (req, res) => {
+  app.delete('/api/events/:id', member, csrf, groupContext, (req, res) => {
     const event = db
       .prepare('SELECT * FROM events WHERE id=? AND group_id=?')
       .get(req.params.id, req.group.id);
@@ -436,10 +448,7 @@ export function registerEvents(app) {
       return res.status(404).json({ error: 'ไม่พบกิจกรรมในกลุ่มนี้' });
     }
 
-    if (
-      !['owner', 'manager', 'editor'].includes(req.membership.role) &&
-      !(event.owner_id === req.session.id && event.status === 'pending')
-    ) {
+    if (!mayDeleteEvent(req, event)) {
       return res.sendStatus(403);
     }
 

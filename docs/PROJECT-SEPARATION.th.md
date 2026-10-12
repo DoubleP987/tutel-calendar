@@ -2,9 +2,9 @@
 
 ## อัปเดตระบบกลุ่ม — 10 ตุลาคม 2026
 
-เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว ส่วน worker Discord และ control panel bridge ยังไม่เปิดแทนของเดิม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
+เว็บ Calendar ระบบกลุ่ม คำเชิญ sidebar และวันกลางขึ้น homeserver แล้ว worker Discord และ Panel รุ่นใหม่เปิดบน homeserver แล้ว ระบบเตือนเก่าหยุดแล้ว ให้เชื่อมช่องด้วย /calendar connect พร้อมลิงก์กลุ่ม ดู [สถานะปัจจุบัน](https://github.com/DoubleP987/tutel-calendar/blob/main/docs/CURRENT-STATUS.md)
 
-ปรับปรุง 10 ตุลาคม 2569 - Calendar ขึ้น homeserver แล้ว แต่ bot worker รุ่นใหม่ยังไม่เปิดใช้งานจริง
+ปรับปรุง 12 ตุลาคม 2569 - Calendar และ worker ระบบกลุ่มเปิดบน homeserver แล้ว โค้ด worker อยู่ฝั่ง Calendar; token ใหม่แยกได้ในภายหลัง
 
 ## 1. แยกสองโปรเจกต์เพื่ออะไร
 

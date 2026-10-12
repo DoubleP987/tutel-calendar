@@ -5,6 +5,39 @@ export const legacyGroupId = 'legacy-calendar';
 /** Add tenant boundaries without replacing existing event or account identifiers. */
 export function initializeGroups(db) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS group_external_access ( group_id TEXT NOT NULL REFERENCES groups(id),
+       user_id TEXT NOT NULL REFERENCES users(id),
+       granted_by TEXT NOT NULL,
+       created_at TEXT NOT NULL,
+       PRIMARY KEY(group_id,
+       user_id) );
+
+     CREATE TABLE IF NOT EXISTS group_announcement_managers ( group_id TEXT NOT NULL REFERENCES groups(id),
+       user_id TEXT NOT NULL REFERENCES users(id),
+       PRIMARY KEY(group_id,
+       user_id) );
+
+     CREATE TABLE IF NOT EXISTS group_announcements ( id TEXT PRIMARY KEY,
+       group_id TEXT NOT NULL REFERENCES groups(id),
+       user_id TEXT NOT NULL,
+       author_name TEXT NOT NULL,
+       title TEXT NOT NULL,
+       body TEXT NOT NULL,
+       request_id TEXT NOT NULL,
+       created_at TEXT NOT NULL,
+       UNIQUE(group_id,
+       user_id,
+       request_id) );
+
+     CREATE TABLE IF NOT EXISTS announcement_delivery ( announcement_id TEXT NOT NULL REFERENCES group_announcements(id),
+       user_id TEXT NOT NULL REFERENCES users(id),
+       state TEXT NOT NULL DEFAULT 'pending',
+       PRIMARY KEY(announcement_id,
+       user_id) );
+
+     CREATE INDEX IF NOT EXISTS announcement_delivery_pending ON announcement_delivery(state);
+  `);
+  db.exec(`
     CREATE TABLE IF NOT EXISTS group_trash ( group_id TEXT PRIMARY KEY,
        slug TEXT NOT NULL UNIQUE,
        name TEXT NOT NULL,
@@ -12,15 +45,21 @@ export function initializeGroups(db) {
        deleted_at INTEGER NOT NULL,
        purge_after INTEGER NOT NULL,
        previous_suspended INTEGER NOT NULL,
-       purged_at INTEGER ); CREATE INDEX IF NOT EXISTS group_trash_expiry ON group_trash(purge_after,
-       purged_at); CREATE TABLE IF NOT EXISTS groups ( id TEXT PRIMARY KEY,
+       purged_at INTEGER );
+
+     CREATE INDEX IF NOT EXISTS group_trash_expiry ON group_trash(purge_after,
+       purged_at);
+
+     CREATE TABLE IF NOT EXISTS groups ( id TEXT PRIMARY KEY,
        slug TEXT NOT NULL UNIQUE,
        name TEXT NOT NULL,
        visibility TEXT NOT NULL DEFAULT 'private' CHECK(visibility IN ('private',
        'public')),
        suspended INTEGER NOT NULL DEFAULT 0,
        settings TEXT NOT NULL DEFAULT '{}',
-       created_at TEXT NOT NULL ); CREATE TABLE IF NOT EXISTS memberships ( group_id TEXT NOT NULL REFERENCES groups(id),
+       created_at TEXT NOT NULL );
+
+     CREATE TABLE IF NOT EXISTS memberships ( group_id TEXT NOT NULL REFERENCES groups(id),
        user_id TEXT NOT NULL REFERENCES users(id),
        role TEXT NOT NULL CHECK(role IN ('owner',
        'manager',
@@ -31,13 +70,17 @@ export function initializeGroups(db) {
        preferences TEXT NOT NULL DEFAULT '{}',
        joined_at TEXT NOT NULL,
        PRIMARY KEY(group_id,
-       user_id) ); CREATE TABLE IF NOT EXISTS identities ( provider TEXT NOT NULL,
+       user_id) );
+
+     CREATE TABLE IF NOT EXISTS identities ( provider TEXT NOT NULL,
        subject TEXT NOT NULL,
        user_id TEXT NOT NULL REFERENCES users(id),
        email TEXT,
        email_verified INTEGER NOT NULL DEFAULT 0,
        PRIMARY KEY(provider,
-       subject) ); CREATE TABLE IF NOT EXISTS invitations ( id TEXT PRIMARY KEY,
+       subject) );
+
+     CREATE TABLE IF NOT EXISTS invitations ( id TEXT PRIMARY KEY,
        group_id TEXT NOT NULL REFERENCES groups(id),
        token_hash TEXT UNIQUE,
        email TEXT,
@@ -51,16 +94,24 @@ export function initializeGroups(db) {
        uses INTEGER NOT NULL DEFAULT 0,
        revoked INTEGER NOT NULL DEFAULT 0,
        created_by TEXT,
-       created_at TEXT NOT NULL ); CREATE TABLE IF NOT EXISTS audit_log ( id TEXT PRIMARY KEY,
+       created_at TEXT NOT NULL );
+
+     CREATE TABLE IF NOT EXISTS audit_log ( id TEXT PRIMARY KEY,
        group_id TEXT,
        actor TEXT NOT NULL,
        action TEXT NOT NULL,
        target TEXT NOT NULL,
-       created_at TEXT NOT NULL ); CREATE INDEX IF NOT EXISTS audit_group_history ON audit_log(group_id,
+       created_at TEXT NOT NULL );
+
+     CREATE INDEX IF NOT EXISTS audit_group_history ON audit_log(group_id,
        created_at DESC,
-       id DESC); CREATE TABLE IF NOT EXISTS audit_snapshots ( audit_id TEXT PRIMARY KEY REFERENCES audit_log(id) ON DELETE CASCADE,
+       id DESC);
+
+     CREATE TABLE IF NOT EXISTS audit_snapshots ( audit_id TEXT PRIMARY KEY REFERENCES audit_log(id) ON DELETE CASCADE,
        actor_name TEXT NOT NULL,
-       target_name TEXT NOT NULL ); CREATE TABLE IF NOT EXISTS discord_bindings ( id TEXT PRIMARY KEY,
+       target_name TEXT NOT NULL );
+
+     CREATE TABLE IF NOT EXISTS discord_bindings ( id TEXT PRIMARY KEY,
        group_id TEXT NOT NULL REFERENCES groups(id),
        guild_id TEXT NOT NULL,
        channel_id TEXT NOT NULL,
@@ -69,11 +120,15 @@ export function initializeGroups(db) {
        created_at TEXT NOT NULL,
        UNIQUE(group_id,
        guild_id,
-       channel_id) ); CREATE TABLE IF NOT EXISTS discord_connection_grants ( hash TEXT PRIMARY KEY,
+       channel_id) );
+
+     CREATE TABLE IF NOT EXISTS discord_connection_grants ( hash TEXT PRIMARY KEY,
        discord_user_id TEXT NOT NULL,
        guild_id TEXT NOT NULL,
        channel_id TEXT NOT NULL,
-       expires_at INTEGER NOT NULL ); CREATE TABLE IF NOT EXISTS notification_jobs ( id TEXT PRIMARY KEY,
+       expires_at INTEGER NOT NULL );
+
+     CREATE TABLE IF NOT EXISTS notification_jobs ( id TEXT PRIMARY KEY,
        binding_id TEXT NOT NULL REFERENCES discord_bindings(id),
        group_id TEXT NOT NULL REFERENCES groups(id),
        dedupe TEXT NOT NULL UNIQUE,
@@ -85,9 +140,15 @@ export function initializeGroups(db) {
        attempts INTEGER NOT NULL DEFAULT 0,
        message_id TEXT,
        error TEXT,
-       updated_at TEXT NOT NULL ); CREATE INDEX IF NOT EXISTS jobs_due ON notification_jobs(state,
-       due_at); CREATE INDEX IF NOT EXISTS memberships_user ON memberships(user_id,
-       blocked); CREATE INDEX IF NOT EXISTS invitations_email ON invitations(email,
+       updated_at TEXT NOT NULL );
+
+     CREATE INDEX IF NOT EXISTS jobs_due ON notification_jobs(state,
+       due_at);
+
+     CREATE INDEX IF NOT EXISTS memberships_user ON memberships(user_id,
+       blocked);
+
+     CREATE INDEX IF NOT EXISTS invitations_email ON invitations(email,
        revoked,
        expires_at);
   `);
@@ -125,7 +186,9 @@ export function initializeGroups(db) {
   db.exec(`
     CREATE INDEX IF NOT EXISTS events_shared_date ON events(date,
        end_date)
-    WHERE data_scope='shared' AND status='published'; CREATE INDEX IF NOT EXISTS events_local_date ON events(group_id,
+    WHERE data_scope='shared' AND status='published';
+
+     CREATE INDEX IF NOT EXISTS events_local_date ON events(group_id,
        date,
        end_date)
     WHERE data_scope='group' AND status='published';
@@ -210,7 +273,16 @@ export function recordAudit(db, actor, action, target, groupId = null) {
     targetName = db
       .prepare('SELECT title FROM events WHERE id=? AND group_id=?')
       .get(String(target), groupId)?.title;
-  } else if (action.includes('membership') || action.includes('transfer')) {
+  } else if (action === 'announcement.sent') {
+    targetName = db
+      .prepare('SELECT title FROM group_announcements WHERE id=?')
+      .get(String(target))?.title;
+  } else if (
+    action.includes('membership') ||
+    action.includes('transfer') ||
+    action.startsWith('external.') ||
+    action === 'announcement.permission'
+  ) {
     targetName = db.prepare('SELECT name FROM users WHERE id=?').get(String(target))?.name;
   } else if (action.startsWith('group.') || action === 'platform.group-updated') {
     targetName = db.prepare('SELECT name FROM groups WHERE id=?').get(groupId)?.name;

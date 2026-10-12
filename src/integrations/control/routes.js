@@ -1,3 +1,4 @@
+import { calendarDiscordStatus, assertCalendarChannel } from '../../discord-bot/runtime.js';
 import { db } from '../../database/connection.js';
 import { serviceAuth } from '../discord/security.js';
 import { recordAudit } from '../../groups/schema.js';
@@ -11,6 +12,7 @@ import { saveBinding, enqueueBindingTest } from '../discord/bindings.js';
 import { validate } from '../../events/routes.js';
 import { published } from '../../notifications/service.js';
 import { sendInvitationEmail } from '../../notifications/email.js';
+import { notifyEventChange } from '../../events/workflow.js';
 import { categories } from '../../events/categories.js';
 
 /** Private service API, authenticated with its own key. Never shares browser cookies. */
@@ -19,6 +21,7 @@ export function registerControlIntegration(app) {
   app.use('/internal/v1/control/groups/:id', (req, res, next) => {
     if (
       !['GET', 'HEAD'].includes(req.method) &&
+      !(req.method === 'DELETE' && req.path === '/') &&
       db.prepare('SELECT group_id FROM group_trash WHERE group_id=?').get(req.params.id)
     ) {
       return res.status(409).json({ error: 'ปฏิทินอยู่ในถังขยะ ให้เจ้าของกู้คืนก่อนแก้ไข' });
@@ -31,7 +34,12 @@ export function registerControlIntegration(app) {
 
   app.get('/internal/v1/control/overview', (req, res) =>
     res.json({
+      ...calendarDiscordStatus(),
       groups: db.prepare('SELECT count(*) n FROM groups').get().n,
+      discordServers: db
+        .prepare('SELECT count(DISTINCT guild_id) n FROM discord_bindings WHERE enabled=1')
+        .get().n,
+      memberships: db.prepare('SELECT count(*) n FROM memberships WHERE blocked=0').get().n,
       members: db.prepare('SELECT count(*) n FROM users').get().n,
       pending: db.prepare("SELECT count(*) n FROM events WHERE status='pending'").get().n,
       failed: db
@@ -57,7 +65,7 @@ export function registerControlIntegration(app) {
             WHERE m.group_id=g.id AND m.blocked=0) member_count,
                (SELECT count(*)
             FROM events e
-            WHERE e.group_id=g.id) event_count,
+            WHERE e.group_id=g.id AND e.data_scope='group') event_count,
                (SELECT u.name
             FROM memberships m
             JOIN users u ON u.id=m.user_id
@@ -77,9 +85,21 @@ export function registerControlIntegration(app) {
     res.json(
       db
         .prepare(
-          'SELECT id,name,provider,blocked FROM users WHERE name LIKE ? ORDER BY name LIMIT 1000',
+          `
+            SELECT id,
+               name,
+               custom_name,
+               provider,
+               blocked
+            FROM users
+            WHERE name LIKE ? OR provider_name LIKE ? OR id IN (SELECT user_id
+            FROM identities
+            WHERE email LIKE ?)
+            ORDER BY name
+            LIMIT 1000
+          `,
         )
-        .all(`%${String(req.query.q || '').slice(0, 100)}%`)
+        .all(...Array(3).fill(`%${String(req.query.q || '').slice(0, 100)}%`))
         .map((user) => ({
           ...user,
           originalName:
@@ -208,6 +228,11 @@ export function registerControlIntegration(app) {
       db.prepare(
         'UPDATE memberships SET role=?,blocked=?,auto_approve=? WHERE group_id=? AND user_id=?',
       ).run(value.role, value.blocked, value.autoApprove, req.params.id, req.params.userId);
+      if (value.role !== 'manager' || value.blocked)
+        db.prepare('DELETE FROM group_announcement_managers WHERE group_id=? AND user_id=?').run(
+          req.params.id,
+          req.params.userId,
+        );
       recordAudit(
         db,
         req.serviceActor,
@@ -346,8 +371,10 @@ export function registerControlIntegration(app) {
     res.json({ ok: true });
   });
 
-  app.post('/internal/v1/control/groups/:id/bindings', (req, res) => {
+  app.post('/internal/v1/control/groups/:id/bindings', async (req, res) => {
     try {
+      if (req.body.enabled !== false)
+        await assertCalendarChannel(req.body.guildId, req.body.channelId);
       const result = saveBinding(req.params.id, req.serviceActor, req.body, req.body.id || null);
 
       if (req.body.test === true) {
@@ -411,7 +438,17 @@ export function registerControlIntegration(app) {
       return res.status(409).json({ error: 'รายการนำเข้าต้องจัดการต้นทางระหว่างย้ายข้อมูล' });
     }
 
-    db.prepare('DELETE FROM events WHERE id=? AND group_id=?').run(event.id, req.params.id);
+    db.prepare(
+      `
+        UPDATE events
+        SET previous_lifecycle=lifecycle,
+          lifecycle='trash',
+          deleted_at=?,
+          revision=revision+1
+        WHERE id=? AND group_id=?
+      `,
+    ).run(Date.now(), event.id, req.params.id);
+    notifyEventChange(db.prepare('SELECT * FROM events WHERE id=?').get(event.id), 'cancelled');
     recordAudit(db, req.serviceActor, 'platform.event-deleted', event.id, req.params.id);
     res.json({ ok: true });
   });

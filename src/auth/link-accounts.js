@@ -48,6 +48,33 @@ export function mergeVerifiedAccount(targetId, sourceId) {
       }
     }
 
+    for (const table of ['group_external_access', 'group_announcement_managers']) {
+      if (table === 'group_external_access') {
+        db.prepare(
+          `
+            INSERT OR IGNORE INTO group_external_access SELECT group_id,
+               ?,
+               granted_by,
+               created_at
+            FROM group_external_access
+            WHERE user_id=?
+          `,
+        ).run(targetId, sourceId);
+      } else {
+        db.prepare(
+          `
+            INSERT OR IGNORE INTO group_announcement_managers SELECT group_id,
+               ?
+            FROM group_announcement_managers
+            WHERE user_id=?
+          `,
+        ).run(targetId, sourceId);
+      }
+
+      db.prepare(`DELETE FROM ${table} WHERE user_id=?`).run(sourceId);
+    }
+
+    db.prepare('DELETE FROM announcement_delivery WHERE user_id=?').run(sourceId);
     db.prepare('DELETE FROM memberships WHERE user_id=?').run(sourceId);
     db.prepare(
       `

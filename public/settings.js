@@ -1,3 +1,4 @@
+import { announcementUI } from './group-notices.js?v=20261012';
 import { renderGroupHistory, groupDate } from './history.js?v=20261010-history';
 
 export function settingsUI({ api, state, element, toast, detail }) {
@@ -5,6 +6,8 @@ export function settingsUI({ api, state, element, toast, detail }) {
 
   const $$ = (s) => [...document.querySelectorAll(s)];
 
+  const announcements = announcementUI({ api, state, element, toast });
+  let pushConfig;
   let registration;
   let prefs;
   let catalog;
@@ -12,9 +15,10 @@ export function settingsUI({ api, state, element, toast, detail }) {
   const pages = ['members', 'history', 'admin', 'notifications', 'preferences'];
   const preferenceForm = $('#preferences-form');
   const extraSettings = element('details', 'workspace-tools');
-  extraSettings.append(element('summary', '', 'สรุปรายวันและช่วงเวลางดรบกวน'));
+  extraSettings.append(element('summary', '', 'ประกาศ สรุปรายวัน และช่วงเวลางดรบกวน'));
 
   for (const [name, text] of [
+    ['notifyAnnouncements', 'รับประกาศจากเจ้าของและผู้จัดการกลุ่ม'],
     ['notifyTomorrow', 'สรุปกิจกรรมวันพรุ่งนี้ ตอน 12:00 น.'],
     ['notifyDaily', 'สรุปกิจกรรมวันนี้หนึ่งครั้ง ตามเวลาเตือนทั้งวัน'],
     ['quietEnabled', 'งดส่งแจ้งเตือนเข้าอุปกรณ์ในช่วงนี้ (ยังเก็บในเว็บ)'],
@@ -92,6 +96,52 @@ export function settingsUI({ api, state, element, toast, detail }) {
 
     for (const id of ['members-nav', 'history-nav']) {
       document.getElementById(id).hidden = !state.session.user || !state.group?.role;
+    }
+
+    pushConfig = state.session.user && state.group?.isMember ? await api('/api/push-key') : null;
+    const introKey = `tutel-push-intro:${state.session.user?.id}:${state.groupId}`;
+    document.querySelector('.push-intro')?.remove();
+
+    if (
+      pushConfig?.enabled &&
+      state.group?.role &&
+      (!('Notification' in window) || Notification.permission === 'default')
+    ) {
+      let seen = false;
+
+      try {
+        seen = localStorage.getItem(introKey) === '1';
+      } catch {}
+
+      if (!seen) {
+        const intro = element('aside', 'push-intro');
+        const enable = element('button', 'primary', 'เปิดแจ้งเตือนกลุ่มนี้');
+        const later = element('button', '', 'ไว้ภายหลัง');
+        enable.type = later.type = 'button';
+
+        const dismiss = () => {
+          try {
+            localStorage.setItem(introKey, '1');
+          } catch {}
+
+          intro.remove();
+        };
+
+        enable.onclick = async () => {
+          dismiss();
+          await open('preferences');
+          $('#enable-push').focus();
+        };
+
+        later.onclick = dismiss;
+        intro.append(
+          element('strong', '', 'รับแจ้งเตือนของ ' + state.group.name),
+          element('p', 'fine', 'เปิดรับประกาศและกิจกรรมของกลุ่มบนอุปกรณ์นี้'),
+          enable,
+          later,
+        );
+        document.body.append(intro);
+      }
     }
 
     await badge();
@@ -263,14 +313,15 @@ export function settingsUI({ api, state, element, toast, detail }) {
       $('#profile-form').elements.name.value = profile.customName || '';
       $('#profile-form').elements.name.placeholder = profile.providerName;
       $('#profile-default').textContent = 'ชื่อจากบัญชี: ' + profile.providerName;
-      prefs = await api('/api/preferences');
+      prefs = state.group?.isMember ? await api('/api/preferences') : { ...catalog.defaults };
+      $('#preferences-form').querySelector('[type=submit]').disabled = !state.group?.isMember;
       const form = $('#preferences-form');
 
       for (const key of ['notifyReminders']) {
         form.elements[key].checked = prefs[key];
       }
 
-      for (const key of ['notifyTomorrow', 'notifyDaily', 'quietEnabled']) {
+      for (const key of ['notifyTomorrow', 'notifyDaily', 'notifyAnnouncements', 'quietEnabled']) {
         form.elements[key].checked = !!prefs[key];
       }
 
@@ -281,14 +332,34 @@ export function settingsUI({ api, state, element, toast, detail }) {
       categoryOptions($('#notify-categories'), prefs.notifyCategories);
       const supported =
         'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-      $('#enable-push').disabled = !supported;
+      $('#enable-push').disabled = !pushConfig?.enabled || !state.group?.isMember;
       $('#push-description').textContent = supported
         ? 'อนุญาตแจ้งเตือนครั้งเดียวเพื่อรับผ่านระบบแจ้งเตือนของอุปกรณ์ แม้ไม่ได้เปิดหน้าเว็บค้างไว้'
         : 'เบราว์เซอร์นี้ยังไม่รองรับ Web Push ลองเปิดผ่านแอปที่เพิ่มในหน้าจอโฮมและใช้ HTTPS';
+
+      if (supported) {
+        const subscribed = await (
+          await navigator.serviceWorker.ready
+        ).pushManager.getSubscription();
+        const saved = subscribed
+          ? await api('/api/push-status', {
+              method: 'POST',
+              body: JSON.stringify({ endpoint: subscribed.endpoint }),
+            })
+          : { subscribed: false };
+        const status =
+          Notification.permission === 'denied'
+            ? 'ถูกบล็อก: เปลี่ยนสิทธิ์ในตั้งค่าเบราว์เซอร์'
+            : saved.subscribed && Notification.permission === 'granted'
+              ? 'เปิดรับบนเครื่องนี้แล้ว'
+              : 'ยังไม่เปิดรับบนเครื่องนี้';
+        $('#push-description').textContent = status + ' · รับเฉพาะกลุ่มที่คุณเป็นสมาชิก';
+      }
     } else if (name === 'notifications') {
       const data = await api('/api/notifications');
       const root = $('#notification-list');
       root.replaceChildren();
+      announcements.render(root);
 
       for (const n of data.items) {
         const card = element('article', n.read_at ? 'proposal' : 'proposal notification-unread');
@@ -373,6 +444,7 @@ export function settingsUI({ api, state, element, toast, detail }) {
       prefs = await api('/api/preferences', {
         method: 'PUT',
         body: JSON.stringify({
+          notifyAnnouncements: form.elements.notifyAnnouncements.checked,
           notifyPublished: false,
           notifyReview: false,
           notifyReminders: form.elements.notifyReminders.checked,
@@ -414,7 +486,16 @@ export function settingsUI({ api, state, element, toast, detail }) {
 
   $('#enable-push').onclick = async () => {
     try {
-      const config = await api('/api/push-key');
+      const config = pushConfig;
+
+      if (!('Notification' in window) || !('PushManager' in window)) {
+        document.querySelector('#install-open')?.click();
+        throw new Error('บน iPhone/iPad ให้เพิ่มเว็บไปหน้าจอโฮม แล้วเปิดจากไอคอนก่อนเปิดแจ้งเตือน');
+      }
+
+      if (!config) {
+        throw new Error('กรุณาเลือกกลุ่มที่คุณเป็นสมาชิกก่อน');
+      }
 
       if (!config.enabled) {
         throw new Error('ยังไม่ได้ตั้งค่า Web Push บนเซิร์ฟเวอร์');
@@ -470,7 +551,17 @@ export function settingsUI({ api, state, element, toast, detail }) {
 
   $('#push-test').onclick = async () => {
     try {
-      await api('/api/push-test', { method: 'POST', body: '{}' });
+      const ready = await navigator.serviceWorker.ready;
+      const subscription = await ready.pushManager.getSubscription();
+
+      if (!subscription) {
+        throw new Error('เปิดรับแจ้งเตือนบนเครื่องนี้ก่อน');
+      }
+
+      await api('/api/push-test', {
+        method: 'POST',
+        body: JSON.stringify({ endpoint: subscription.endpoint }),
+      });
       await badge();
       toast('ส่งรายการทดลองแล้ว ตรวจกล่องแจ้งเตือนและอุปกรณ์');
     } catch (e) {

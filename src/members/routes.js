@@ -66,6 +66,11 @@ export function registerAdministration(app) {
         db.prepare(
           'UPDATE memberships SET role=?,blocked=?,auto_approve=? WHERE group_id=? AND user_id=?',
         ).run(value.role, value.blocked, value.autoApprove, req.group.id, req.params.id);
+        if (value.role !== 'manager' || value.blocked)
+          db.prepare('DELETE FROM group_announcement_managers WHERE group_id=? AND user_id=?').run(
+            req.group.id,
+            req.params.id,
+          );
         recordAudit(db, req.session.id, 'membership.updated', req.params.id, req.group.id);
         res.json({ ok: true });
       } catch (error) {

@@ -71,3 +71,9 @@ See [Current workflow guide](docs/WORKFLOWS.md) and [คู่มือภาษ
 ## Invitation links and display names
 
 See [คำเชิญใช้ครั้งเดียวและชื่อที่แสดง / guide](docs/INVITATIONS-AND-PROFILE.md).
+
+## Group administration release / ระบบกลุ่ม 12 October 2026
+
+See [announcements and privileged administration](docs/ANNOUNCEMENTS-AND-ADMIN.md) and [Calendar-owned Discord runtime](docs/DISCORD-CALENDAR-BOT.md) for deletion permissions, external assistance, device Push and URL-based /calendar connect. These current contracts supersede earlier descriptions of legacy Calendar administration.
+
+Backup before the group-management release: [recovery points and rollback procedure](docs/ROLLBACK.md). Private databases and credentials are not published.

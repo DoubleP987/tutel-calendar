@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
         body: data.body || '',
         icon: '/assets/app-icon.png',
         badge: '/assets/app-icon.png',
-        tag: `${data.groupId || 'calendar'}:${data.eventId || 'notification'}`,
+        tag: `${data.groupId || 'calendar'}:${data.notificationId || data.eventId || 'notification'}`,
         data: { url: data.url || '/' },
       }),
       self.navigator?.setAppBadge

@@ -69,7 +69,9 @@ export function initializeSchema(db) {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,
-       value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS notifications ( id TEXT PRIMARY KEY,
+       value TEXT NOT NULL);
+
+     CREATE TABLE IF NOT EXISTS notifications ( id TEXT PRIMARY KEY,
        user_id TEXT NOT NULL REFERENCES users(id),
        title TEXT NOT NULL,
        body TEXT NOT NULL,
@@ -79,7 +81,9 @@ export function initializeSchema(db) {
        read_at TEXT,
        dedupe TEXT NOT NULL,
        UNIQUE(user_id,
-       dedupe) ); CREATE TABLE IF NOT EXISTS push_subscriptions ( endpoint TEXT PRIMARY KEY,
+       dedupe) );
+
+     CREATE TABLE IF NOT EXISTS push_subscriptions ( endpoint TEXT PRIMARY KEY,
        user_id TEXT NOT NULL REFERENCES users(id),
        subscription TEXT NOT NULL,
        created_at TEXT NOT NULL );

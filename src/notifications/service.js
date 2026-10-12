@@ -30,7 +30,10 @@ export function unread(userId, groupId = null) {
     .get(userId, groupId, groupId).n;
 }
 
-export function notify(userId, { title, body, eventId = null, groupId = null, kind, dedupe }) {
+export function notify(
+  userId,
+  { title, body, eventId = null, groupId = null, kind, dedupe, endpoint = null },
+) {
   // Event mutations remain in audit history; notifications are scheduled reminders only.
   if (['published', 'change', 'review'].includes(kind)) {
     return;
@@ -54,6 +57,7 @@ export function notify(userId, { title, body, eventId = null, groupId = null, ki
     return;
   }
 
+  const notificationId = randomUUID();
   const result = db
     .prepare(
       `
@@ -78,7 +82,7 @@ export function notify(userId, { title, body, eventId = null, groupId = null, ki
       `,
     )
     .run(
-      randomUUID(),
+      notificationId,
       userId,
       title,
       body,
@@ -105,33 +109,50 @@ export function notify(userId, { title, body, eventId = null, groupId = null, ki
   const end = prefs.quietEnd || '07:00';
 
   if (
+    kind !== 'test' &&
     prefs.quietEnabled &&
     (start < end ? clock >= start && clock < end : clock >= start || clock < end)
   ) {
     return;
   }
 
-  const rows = db.prepare('SELECT * FROM push_subscriptions WHERE user_id=?').all(userId);
-  const payload = JSON.stringify({
+  const rows = db
+    .prepare('SELECT * FROM push_subscriptions WHERE user_id=?')
+    .all(userId)
+    .filter((row) => !endpoint || row.endpoint === endpoint);
+  const pushData = {
     title,
     body,
     eventId,
+    notificationId,
     unread: unread(userId),
     groupId,
     url: `/g/${encodeURIComponent(db.prepare('SELECT slug FROM groups WHERE id=?').get(groupId).slug)}${eventId ? `?event=${encodeURIComponent(eventId)}` : '?notifications=1'}`,
-  });
+  };
+  // Push services limit encrypted payload size; the complete text remains in the inbox.
+  while (Buffer.byteLength(JSON.stringify(pushData), 'utf8') > 3500 && pushData.body.length > 64) {
+    pushData.body = pushData.body.slice(0, -64);
+  }
+
+  const payload = JSON.stringify(pushData);
+
+  const deliveries = [];
 
   for (const row of rows) {
-    void webPush
-      .sendNotification(JSON.parse(row.subscription), payload, { TTL: 3600, timeout: 10000 })
-      .catch((error) => {
-        if ([404, 410].includes(error.statusCode)) {
-          db.prepare('DELETE FROM push_subscriptions WHERE endpoint=?').run(row.endpoint);
-        } else {
-          console.warn('[push] delivery unavailable:', error.statusCode || error.name);
-        }
-      });
+    deliveries.push(
+      webPush
+        .sendNotification(JSON.parse(row.subscription), payload, { TTL: 3600, timeout: 10000 })
+        .catch((error) => {
+          if ([404, 410].includes(error.statusCode)) {
+            db.prepare('DELETE FROM push_subscriptions WHERE endpoint=?').run(row.endpoint);
+          } else {
+            console.warn('[push] delivery unavailable:', error.statusCode || error.name);
+          }
+        }),
+    );
   }
+
+  return Promise.allSettled(deliveries);
 }
 
 export function published(eventId) {
@@ -211,10 +232,10 @@ export function registerNotifications(app) {
       .prepare('SELECT count(*) n FROM push_subscriptions WHERE user_id=?')
       .get(req.session.id).n;
     const existing = db
-      .prepare('SELECT endpoint FROM push_subscriptions WHERE endpoint=?')
+      .prepare('SELECT endpoint,user_id FROM push_subscriptions WHERE endpoint=?')
       .get(req.body.endpoint);
 
-    if (count >= 5 && !existing) {
+    if (count >= 5 && (!existing || existing.user_id !== req.session.id)) {
       return res.status(400).json({ error: 'รองรับไม่เกิน 5 อุปกรณ์ต่อบัญชี' });
     }
 
@@ -241,8 +262,30 @@ export function registerNotifications(app) {
     res.json({ ok: true });
   });
 
+  app.post('/api/push-status', member, (req, res) => {
+    const endpoint = String(req.body.endpoint || '');
+    const subscribed = Boolean(
+      db
+        .prepare('SELECT endpoint FROM push_subscriptions WHERE endpoint=? AND user_id=?')
+        .get(endpoint, req.session.id),
+    );
+    res.json({ configured, subscribed });
+  });
+
   app.post('/api/push-test', member, csrf, groupContext, requireGroupMember, (req, res) => {
+    if (!req.membership?.user_id) return res.status(403).json({ error: 'ต้องเป็นสมาชิกกลุ่มก่อน' });
+    const endpoint = String(req.body.endpoint || '');
+
+    if (
+      !db
+        .prepare('SELECT endpoint FROM push_subscriptions WHERE endpoint=? AND user_id=?')
+        .get(endpoint, req.session.id)
+    ) {
+      return res.status(400).json({ error: 'เปิดรับแจ้งเตือนบนเครื่องนี้ก่อน' });
+    }
+
     notify(req.session.id, {
+      endpoint,
       groupId: req.group.id,
       title: 'Tutel Calendar',
       body: 'เปิดแจ้งเตือนบนอุปกรณ์นี้แล้ว',

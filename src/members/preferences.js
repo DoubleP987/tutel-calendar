@@ -71,6 +71,7 @@ export function registerPreferences(app) {
       'notifyChanges',
       'notifyDaily',
       'notifyTomorrow',
+      'notifyAnnouncements',
       'quietEnabled',
     ]) {
       if (req.body[key] !== undefined) {

@@ -65,10 +65,16 @@ export function initializeFeedback() {
        read_at TEXT,
        created_at TEXT NOT NULL,
        updated_at TEXT NOT NULL,
-       updated_by TEXT ); CREATE TABLE IF NOT EXISTS feedback_images ( id TEXT PRIMARY KEY,
+       updated_by TEXT );
+
+     CREATE TABLE IF NOT EXISTS feedback_images ( id TEXT PRIMARY KEY,
        feedback_id TEXT NOT NULL REFERENCES feedback(id) ON DELETE CASCADE,
-       size INTEGER NOT NULL ); CREATE INDEX IF NOT EXISTS feedback_created ON feedback(created_at DESC,
-       id DESC); CREATE INDEX IF NOT EXISTS feedback_user_created ON feedback(user_id,
+       size INTEGER NOT NULL );
+
+     CREATE INDEX IF NOT EXISTS feedback_created ON feedback(created_at DESC,
+       id DESC);
+
+     CREATE INDEX IF NOT EXISTS feedback_user_created ON feedback(user_id,
        created_at DESC);
   `);
 }

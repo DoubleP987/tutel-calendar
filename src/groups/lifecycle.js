@@ -9,10 +9,14 @@ export function initializeLifecycle() {
        user_id TEXT NOT NULL,
        exited_at TEXT NOT NULL,
        PRIMARY KEY(group_id,
-       user_id) ); CREATE TABLE IF NOT EXISTS ownership_requests ( group_id TEXT PRIMARY KEY REFERENCES groups(id),
+       user_id) );
+
+     CREATE TABLE IF NOT EXISTS ownership_requests ( group_id TEXT PRIMARY KEY REFERENCES groups(id),
        from_user TEXT NOT NULL,
        to_user TEXT NOT NULL,
-       expires_at INTEGER NOT NULL ); CREATE TABLE IF NOT EXISTS account_views ( user_id TEXT PRIMARY KEY REFERENCES users(id),
+       expires_at INTEGER NOT NULL );
+
+     CREATE TABLE IF NOT EXISTS account_views ( user_id TEXT PRIMARY KEY REFERENCES users(id),
        group_ids TEXT NOT NULL DEFAULT '[]' );
   `);
 }
@@ -28,6 +32,14 @@ export function removeMembership(groupId, userId, actor) {
       new Date().toISOString(),
     );
     db.prepare('DELETE FROM memberships WHERE group_id=? AND user_id=?').run(groupId, userId);
+    db.prepare('DELETE FROM group_external_access WHERE group_id=? AND user_id=?').run(
+      groupId,
+      userId,
+    );
+    db.prepare('DELETE FROM group_announcement_managers WHERE group_id=? AND user_id=?').run(
+      groupId,
+      userId,
+    );
     db.prepare(
       'DELETE FROM ownership_requests WHERE group_id=? AND (from_user=? OR to_user=?)',
     ).run(groupId, userId, userId);

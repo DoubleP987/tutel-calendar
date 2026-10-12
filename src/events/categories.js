@@ -21,6 +21,7 @@ export const defaultPreferences = {
   notifyPublished: false,
   notifyReview: false,
   notifyChanges: false,
+  notifyAnnouncements: true,
   notifyDaily: true,
   notifyTomorrow: true,
   notifyReminders: true,

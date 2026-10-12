@@ -97,3 +97,7 @@ See [Current workflow guide](WORKFLOWS.md) and [คู่มือภาษา�
 | `/g/:slug`                     | Group viewing context; public visibility or authorized membership still required           |
 
 Main-panel Feedback access uses the separate service-control contract, not group manager roles. See [FEEDBACK.md](FEEDBACK.md), [INVITATIONS-AND-PROFILE.md](INVITATIONS-AND-PROFILE.md), [REMINDERS.md](REMINDERS.md) and [CODE-STYLE.md](CODE-STYLE.md).
+
+## 12 October group administration release
+
+New protected APIs cover owner assistant/announcement permissions, durable announcement delivery, current-device Push status, privileged user/session/member management, suspended-group permanent deletion, `/internal/v1/bot/runtime-info` and URL-based `/internal/v1/bot/connect-link`. See the Calendar repository docs ANNOUNCEMENTS-AND-ADMIN.md, DISCORD-CALENDAR-BOT.md and ROLLBACK.md for exact authorization and recovery rules. Main Panel exposes these through its authenticated admin proxy; service keys never reach the browser.

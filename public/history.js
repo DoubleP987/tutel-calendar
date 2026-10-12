@@ -1,4 +1,10 @@
 const actions = {
+  'announcement.sent': 'ส่งประกาศของกลุ่ม',
+  'announcement.permission': 'เปลี่ยนสิทธิ์ส่งประกาศ',
+  'external.granted': 'เพิ่มผู้ช่วยจัดการภายนอก',
+  'external.revoked': 'ถอนสิทธิ์ผู้ช่วยภายนอก',
+  'platform.membership-added': 'ผู้ดูแลส่วนกลางเพิ่มสมาชิก',
+  'platform.group-deleted': 'ผู้ดูแลส่วนกลางลบปฏิทินถาวร',
   'membership.joined': 'เข้าร่วมกลุ่ม',
   'membership.updated': 'เปลี่ยนสิทธิ์หรือสถานะสมาชิก',
   'membership.left': 'ออกจากกลุ่ม',

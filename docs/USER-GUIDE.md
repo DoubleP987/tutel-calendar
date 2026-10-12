@@ -147,7 +147,7 @@ Writes use session authentication and CSRF. Group APIs enforce group context and
 
 ## Deployment boundaries
 
-Grouped Discord worker activation is still a coordinated migration, with `CALENDAR_GROUPS_ENABLED=0` preserved until legacy channels have migrated. `/calendar connect` obtains a same-Discord-account, single-use binding grant once grouped integration is enabled. The Calendar Discord OAuth app itself is not a second bot runtime. Main server-panel emergency owner transfer is a privileged override with audit, distinct from ordinary web owner acceptance. The website still runs on homeserver; Oracle bot failover does not host the website.
+Grouped Discord transport is enabled on homeserver; legacy reminders are disabled. Connect explicitly with `/calendar connect calendar:https://calendar.toomtoom.online/g/<slug>`, using a Discord identity linked to an owner/manager account. Calendar owns the integration and optional standalone runtime; the existing music bot supplies Discord transport temporarily. Main Panel access remains separate from group roles. See the current Calendar DISCORD-CALENDAR-BOT.md and ROLLBACK.md. Website hosting remains on homeserver.
 
 These calendar additions were reviewed and formatted; no destructive production membership/event/ownership tests or email batches were performed. Music skip/loop regressions were separately tested (19 relevant automated cases). Do not interpret service startup as full OAuth, push or device validation.
 

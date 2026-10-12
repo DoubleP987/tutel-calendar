@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
+import { registerAnnouncements, startAnnouncementDelivery } from './notifications/announcements.js';
+import { registerPlatformManagement } from './integrations/control/management.js';
+import { registerCalendarLinkConnection } from './integrations/discord/link-connect.js';
 import { registerFeedback } from './feedback/routes.js';
 import { fileURLToPath } from 'node:url';
 import { authenticate, registerAuth, demo } from './auth/oauth.js';
@@ -72,12 +75,16 @@ registerLifecycle(app);
 registerWorkflow(app);
 registerBindings(app);
 registerDiscordWorker(app);
+registerCalendarLinkConnection(app);
 registerControlIntegration(app);
+registerPlatformManagement(app);
 registerFeedback(app);
 registerEvents(app);
 registerPreferences(app);
 registerAdministration(app);
 registerNotifications(app);
+registerAnnouncements(app);
+const stopAnnouncements = startAnnouncementDelivery();
 const stopReminders = startReminderScheduler();
 const stopSource = startSourceSync();
 const stopInvitationDelivery = startInvitationDelivery();
@@ -107,7 +114,20 @@ const cleanup = setInterval(() => {
 }, 600000);
 cleanup.unref();
 
+let stopCalendarDiscord = () => {};
+
+if (process.env.CALENDAR_DISCORD_TOKEN?.trim() && process.env.CALENDAR_DISCORD_AUTOSTART !== '0') {
+  import('./discord-bot/runtime.js')
+    .then((module) => module.startCalendarDiscordBot())
+    .then((stop) => {
+      stopCalendarDiscord = stop;
+    })
+    .catch((error) => console.error('[calendar-discord] startup:', error.name));
+}
+
 async function shutdown() {
+  stopCalendarDiscord();
+  stopAnnouncements();
   stopSource();
   stopReminders();
   clearInterval(cleanup);

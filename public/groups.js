@@ -1,3 +1,4 @@
+import { manageCapabilities } from './group-notices.js?v=20261012';
 import { workspaceUI } from './workspace.js?v=20261010-workflows';
 import { renderGroupHistory } from './history.js?v=20261010-history';
 
@@ -565,6 +566,14 @@ export function groupsUI({ api, state, element, toast, reload, editEvent }) {
       calendarShare(node);
       submit(node, 'บันทึกกลุ่ม');
       body.append(button('โอนเจ้าของกลุ่ม', transfer));
+
+      if (state.group.role === 'owner') {
+        body.append(
+          button('สิทธิ์ผู้ช่วยและการส่งประกาศ', () =>
+            manageCapabilities({ api, state, element, toast }),
+          ),
+        );
+      }
     }
 
     body.append(
@@ -927,11 +936,7 @@ export function groupsUI({ api, state, element, toast, reload, editEvent }) {
       const info = element('span', 'group-picker-info');
       info.append(
         element('strong', '', group.name),
-        element(
-          'small',
-          '',
-          labels[group.role] || (group.visibility === 'public' ? 'ปฏิทินสาธารณะ' : 'สมาชิก'),
-        ),
+        element('small', '', labels[group.role] || 'ผู้ช่วยภายนอก'),
       );
       choice.append(
         element('span', 'group-picker-avatar', group.name.slice(0, 1)),

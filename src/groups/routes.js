@@ -12,6 +12,7 @@ import {
 } from './invitations.js';
 import { queueInvitation } from '../notifications/invitation-delivery.js';
 import { trashGroup, restoreGroup } from './trash.js';
+import { mayAnnounce } from './capabilities.js';
 import { notify } from '../notifications/service.js';
 
 export function registerGroups(app) {
@@ -38,14 +39,16 @@ export function registerGroups(app) {
                g.suspended,
                m.role
             FROM groups g
-            JOIN memberships m ON m.group_id=g.id
-            WHERE m.user_id=? AND m.blocked=0 AND NOT EXISTS (SELECT 1
+            LEFT JOIN memberships m ON m.group_id=g.id AND m.user_id=?
+            WHERE (m.blocked=0 OR (m.user_id IS NULL AND EXISTS (SELECT 1
+            FROM group_external_access a
+            WHERE a.group_id=g.id AND a.user_id=?))) AND NOT EXISTS (SELECT 1
             FROM group_trash t
             WHERE t.group_id=g.id)
             ORDER BY g.name
           `,
         )
-        .all(req.session.id),
+        .all(req.session.id, req.session.id),
     );
   });
 
@@ -118,7 +121,10 @@ export function registerGroups(app) {
       visibility: req.group.visibility,
       suspended: !!req.group.suspended,
       role: req.membership?.role || null,
-      canRead: !!req.membership || req.group.visibility === 'public',
+      isMember: Boolean(req.membership?.user_id),
+      canRead: !!req.membership || req.externalAccess || req.group.visibility === 'public',
+      externalAssistant: !!req.externalAccess,
+      canAnnounce: mayAnnounce(req.group.id, req.session?.id),
     }),
   );
 

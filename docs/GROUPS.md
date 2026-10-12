@@ -113,12 +113,12 @@ Calendar `.env` needs both CALENDAR_CONTROL_SECRET and CALENDAR_BOT_SECRET. Bot 
 ```dotenv
 CALENDAR_SERVICE_URL=http://127.0.0.1:3100
 CALENDAR_WEB_URL=http://127.0.0.1:3100
-CALENDAR_GROUPS_ENABLED=0
+CALENDAR_GROUPS_ENABLED=1
 ```
 
 HTTP is permitted only for loopback development. For separate hosts use a trusted HTTPS Calendar URL accessible from both bot hosts. Real OAuth mode requires HTTPS and ENABLE_DEMO=0; local demo stays loopback-only. Start Calendar with `npm start`, then open http://127.0.0.1:3100. The main panel uses its existing process/configuration. Running the real bot requires its existing Discord and database setup.
 
-Keep CALENDAR_GROUPS_ENABLED=0 during migration: the old reminder scheduler continues. After creating and checking group/channel bindings, set it to 1 on **both** bot hosts, register the command definitions, and restart the services in a coordinated cutover. This flag switches the scheduler globally, not per group. Do not enable it while unmigrated channels still depend on the old scheduler. New-mode calendar commands use the web workflow; legacy add/remove/list command behavior is not preserved in new mode.
+Grouped Discord transport is enabled on homeserver; legacy reminders are disabled. Connect explicitly with `/calendar connect calendar:https://calendar.toomtoom.online/g/<slug>`, using a Discord identity linked to an owner/manager account. Calendar owns the integration and optional standalone runtime; the existing music bot supplies Discord transport temporarily. Main Panel access remains separate from group roles. See the current Calendar DISCORD-CALENDAR-BOT.md and ROLLBACK.md. Website hosting remains on homeserver.
 
 Back up Calendar SQLite with a consistent SQLite backup or while stopped; a live WAL database may have committed rows in its WAL file. Keep the bot's own backup separately. Old event IDs remain, events migrate into the public `cs-skru` group, original members join that group once, and original settings are copied. New groups do not inherit personal activities; they read general dates from one shared dataset. Review original managers before migrating administrator privileges. Stop legacy import/publishing only after Calendar becomes authoritative; do not introduce a two-way sync loop. Imported source removal is not yet reconciled automatically.
 

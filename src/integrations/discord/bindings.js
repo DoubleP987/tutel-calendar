@@ -4,7 +4,7 @@ import { member, csrf } from '../../auth/oauth.js';
 import { groupContext, requireGroupMember, manageGroup } from '../../groups/access.js';
 import { tokenHash } from '../../groups/invitations.js';
 import { recordAudit } from '../../groups/schema.js';
-import { categories } from '../../events/categories.js';
+import { categories, defaultCategories } from '../../events/categories.js';
 
 export const bindingDefaults = {
   dailyTime: '07:00',
@@ -12,7 +12,7 @@ export const bindingDefaults = {
   timed: false,
   leadMinutes: 30,
   color: '#4285f4',
-  categories: categories.map((c) => c.id),
+  categories: defaultCategories,
 };
 
 export function bindingConfig(input = {}) {
