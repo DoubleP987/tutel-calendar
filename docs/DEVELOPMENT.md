@@ -1,5 +1,7 @@
 # Developer handbook: Tutel Calendar
 
+> Deployment update, 13 October 2026: live Calendar and `/admin` Panel now run on ora. Music primary is homeserver, standby is ora; oracle applications are retired. [Current deployment and recovery](ORA-DEPLOYMENT.md). Earlier dated deployment descriptions below are historical.
+
 [Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
 
 ## Invitation/account update — 10 October 2026

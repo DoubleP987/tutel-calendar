@@ -1,5 +1,7 @@
 # Homeserver deployment
 
+> Deployment update, 13 October 2026: live Calendar and `/admin` Panel now run on ora. Music primary is homeserver, standby is ora; oracle applications are retired. [Current deployment and recovery](ORA-DEPLOYMENT.md). Earlier dated deployment descriptions below are historical.
+
 ## Production invitation update — 10 October 2026
 
 The multi-group Calendar web application and invitation routes are now deployed to homeserver at https://calendar.toomtoom.online. Existing SQLite data was retained (548 events and two accounts at migration), and the previous app plus a consistent database backup are stored under `/home/doublep/tutel-calendar/backups/groups-20261010-101849`.

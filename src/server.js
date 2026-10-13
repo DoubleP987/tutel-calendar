@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { registerPanelProxy } from './integrations/control/panel-proxy.js';
 import express from 'express';
 import helmet from 'helmet';
 import { registerAnnouncements, startAnnouncementDelivery } from './notifications/announcements.js';
@@ -61,6 +62,7 @@ app.use(
     },
   }),
 );
+registerPanelProxy(app, base.origin);
 protectRequests(app, base.origin);
 app.use(express.json({ limit: '256kb' }));
 app.use(['/api', '/internal'], (req, res, next) => {

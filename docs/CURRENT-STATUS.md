@@ -1,5 +1,7 @@
 # Current status — 12 October 2026
 
+> Deployment update, 13 October 2026: live Calendar and `/admin` Panel now run on ora. Music primary is homeserver, standby is ora; oracle applications are retired. [Current deployment and recovery](ORA-DEPLOYMENT.md). Earlier dated deployment descriptions below are historical.
+
 [Current feature guide / คู่มือคุณสมบัติปัจจุบัน](CURRENT-FEATURES.md)
 
 Calendar web runs on homeserver through its existing HTTPS tunnel. Public general dates are shared once; selected groups hold their own activities. Google/Discord OAuth, queued invitations and accepted email delivery have been configured. One explicitly authorized Gmail invitation was observed in the inbox; no mass CSV test was sent.

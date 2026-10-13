@@ -77,3 +77,7 @@ See [คำเชิญใช้ครั้งเดียวและชื่
 See [announcements and privileged administration](docs/ANNOUNCEMENTS-AND-ADMIN.md) and [Calendar-owned Discord runtime](docs/DISCORD-CALENDAR-BOT.md) for deletion permissions, external assistance, device Push and URL-based /calendar connect. These current contracts supersede earlier descriptions of legacy Calendar administration.
 
 Backup before the group-management release: [recovery points and rollback procedure](docs/ROLLBACK.md). Private databases and credentials are not published.
+
+## Live deployment — 13 October 2026
+
+Calendar and the privileged `/admin` Panel run on ora; homeserver remains the primary music bot and ora is its SoundCloud standby. [Current hosts, URLs, limits and recovery](docs/ORA-DEPLOYMENT.md).
